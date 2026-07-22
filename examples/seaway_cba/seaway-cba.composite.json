@@ -1,0 +1,126 @@
+{
+  "$schema": "https://eko.dev/schemas/eko.schema.json",
+  "eko": "seaway-afge-cba-release",
+  "version": "1.0.0",
+  "profile": "composite",
+  "metadata": {
+    "created_at": "2026-07-21T18:50:00Z",
+    "owner": "SLSDC-AFGE-Joint-Labor-Management-Council",
+    "description": "Master release envelope pinning compatible versions of recognition claims, overtime policies, grievance procedures, and HR contracts."
+  },
+  "interpreter": {
+    "name": "eko-ir",
+    "version": "v0.2.0"
+  },
+  "resolution_profile": "temporal-hierarchical-cba",
+  "component": {
+    "composite": {
+      "name": "seaway-afge-cba-release",
+      "description": "Composite release envelope for the Saint Lawrence Seaway Development Corporation and AFGE Local 1968 Agreement."
+    },
+    "components": [
+      {
+        "ref": "claim:unit-recognition-claim",
+        "version": "1.0.0",
+        "digest": "sha256:1235d3094cb0aa4ca9aa1139fb7c730c95061d979b549969b4bf27859e9ac0df"
+      },
+      {
+        "ref": "policy:overtime-distribution-policy",
+        "version": "1.0.0",
+        "digest": "sha256:785d267799ff140acdcd1dcd1718eae118b5e65fee75a063cfe2784e324f0f41"
+      },
+      {
+        "ref": "procedure:grievance-arbitration-procedure",
+        "version": "1.0.0",
+        "digest": "sha256:15470f586aa61f5e352fe1221411cca4b43c10a5945a9601dea23828d12e4815"
+      },
+      {
+        "ref": "action_contract:hr-grievance-action-contract",
+        "version": "1.0.0",
+        "digest": "sha256:f46014514be57c78a4c77ec3232f576af11f6b0f2acf980a7690af3781f97ac0"
+      },
+      {
+        "ref": "resolution:temporal-hierarchical-cba",
+        "version": "1.0.0",
+        "digest": "sha256:placeholder"
+      }
+    ],
+    "compatibility_matrix": [
+      {
+        "ensures": "policy.jurisdiction includes claim.jurisdiction",
+        "components": [
+          "claim:unit-recognition-claim",
+          "policy:overtime-distribution-policy"
+        ]
+      },
+      {
+        "ensures": "procedure.step_capabilities exist in action_contract",
+        "components": [
+          "procedure:grievance-arbitration-procedure",
+          "action_contract:hr-grievance-action-contract"
+        ]
+      },
+      {
+        "ensures": "all components share same resolution_profile",
+        "components": [
+          "policy:overtime-distribution-policy",
+          "procedure:grievance-arbitration-procedure"
+        ]
+      }
+    ]
+  },
+  "tests": [
+    {
+      "name": "composite-release-verification",
+      "type": "happy_path",
+      "description": "Verify all component digests match and all components validate.",
+      "fixture": {},
+      "expected": {
+        "all_components_valid": true,
+        "digest_verification": "PASSED",
+        "compatibility_check": "PASSED"
+      },
+      "assertions": [
+        "all_components_valid == true",
+        "digest_verification == 'PASSED'",
+        "compatibility_check == 'PASSED'"
+      ]
+    }
+  ],
+  "attestations": [
+    {
+      "type": "approval",
+      "authority": "SLSDC-Corporate-Counsel",
+      "timestamp": "2026-07-21T19:00:00Z"
+    },
+    {
+      "type": "approval",
+      "authority": "AFGE-Local-1968-Executive-Board",
+      "timestamp": "2026-07-21T19:05:00Z"
+    },
+    {
+      "type": "signature",
+      "authority": "Joint-Labor-Management-Council",
+      "timestamp": "2026-07-21T19:10:00Z",
+      "signature": "SIGNATURE_PLACEHOLDER_PRODUCTION"
+    },
+    {
+      "type": "verification",
+      "authority": "FLRA-Agreement-Compliance-Review",
+      "timestamp": "2026-07-21T19:15:00Z"
+    }
+  ],
+  "deployment": {
+    "environments": ["production"],
+    "rollout_strategy": "gradual",
+    "canary_percentage": 5,
+    "rollback_target": "seaway-afge-cba-release@0.9.0",
+    "monitoring": {
+      "alert_on": [
+        "component_validation_failure",
+        "digest_mismatch",
+        "compatibility_violation"
+      ]
+    }
+  }
+}

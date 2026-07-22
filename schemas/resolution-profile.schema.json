@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eko.dev/schemas/resolution-profile.schema.json",
+  "title": "EKO Resolution Profile",
+  "description": "Defines applicability, conflict resolution, and precedence semantics for EKO releases. Resolution profiles determine how multiple applicable EKOs are selected, ordered, and resolved.",
+  "type": "object",
+  "required": ["profile_id", "applicability_strategy", "precedence", "conflict_resolution"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "description": "Unique identifier for this resolution profile (e.g., 'temporal-jurisdictional', 'hierarchical')."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this resolution profile."
+    },
+    "applicability_strategy": {
+      "type": "string",
+      "enum": ["static_scope", "dynamic_predicate", "hybrid"],
+      "description": "How applicability is determined."
+    },
+    "scope_resolution": {
+      "type": "object",
+      "description": "Scope resolution configuration for static applicability.",
+      "properties": {
+        "hierarchy": {
+          "type": "array",
+          "description": "Hierarchy of scope dimensions in priority order.",
+          "items": {
+            "type": "string",
+            "enum": ["jurisdiction", "tenant", "product", "channel", "audience", "custom"]
+          }
+        },
+        "wildcard_behavior": {
+          "type": "string",
+          "enum": ["match_all", "match_none", "match_explicit_only"],
+          "description": "How to handle wildcard scope matches."
+        },
+        "inheritance": {
+          "type": "object",
+          "description": "Scope inheritance rules.",
+          "properties": {
+            "allow_parent_match": {
+              "type": "boolean",
+              "description": "Whether parent scope can satisfy child requirements."
+            },
+            "default_scope": {
+              "type": "string",
+              "description": "Default scope when none specified."
+            }
+          }
+        }
+      }
+    },
+    "precedence": {
+      "type": "object",
+      "description": "Precedence rules for ordering applicable EKOs.",
+      "required": ["strategy"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["priority_value", "temporal", "hierarchical", "composite"],
+          "description": "Primary precedence strategy."
+        },
+        "temporal": {
+          "type": "object",
+          "description": "Temporal precedence configuration.",
+          "properties": {
+            "compare_field": {
+              "type": "string",
+              "description": "Field to compare for temporal ordering (e.g., 'metadata.effective', 'metadata.created_at')."
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["newest_wins", "oldest_wins"],
+              "description": "Which direction takes precedence."
+            },
+            "grace_period_seconds": {
+              "type": "integer",
+              "description": "Grace period for overlapping temporal validity."
+            }
+          }
+        },
+        "hierarchical": {
+          "type": "object",
+          "description": "Hierarchical precedence configuration.",
+          "properties": {
+            "authority_levels": {
+              "type": "array",
+              "description": "Authority levels in priority order.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "level": { "type": "integer" },
+                  "authorities": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "parent_override": {
+              "type": "boolean",
+              "description": "Whether parent scopes can override child scopes."
+            }
+          }
+        },
+        "priority_value": {
+          "type": "object",
+          "description": "Priority-based precedence using explicit values.",
+          "properties": {
+            "field": {
+              "type": "string",
+              "description": "Field containing priority value (e.g., 'precedence.priority')."
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["higher_wins", "lower_wins"],
+              "description": "Which direction takes precedence."
+            },
+            "default_priority": {
+              "type": "integer",
+              "description": "Default priority when field is absent."
+            }
+          }
+        },
+        "composite": {
+          "type": "object",
+          "description": "Composite precedence combining multiple strategies.",
+          "properties": {
+            "strategies": {
+              "type": "array",
+              "description": "Ordered strategies to apply sequentially.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "strategy": {
+                    "type": "string",
+                    "enum": ["priority_value", "temporal", "hierarchical"]
+                  },
+                  "weight": {
+                    "type": "number",
+                    "description": "Weight for this strategy in composite scoring."
+                  }
+                }
+              }
+            },
+            "tiebreaker": {
+              "type": "string",
+              "enum": ["first_wins", "last_wins", "random", "escalate"],
+              "description": "Tiebreaker when all strategies result in equal precedence."
+            }
+          }
+        }
+      }
+    },
+    "conflict_resolution": {
+      "type": "object",
+      "description": "Conflict detection and resolution behavior.",
+      "required": ["detection", "on_conflict"],
+      "properties": {
+        "detection": {
+          "type": "object",
+          "description": "Conflict detection configuration.",
+          "properties": {
+            "check_overlapping_scope": {
+              "type": "boolean",
+              "description": "Whether to detect overlapping applicability.",
+              "default": true
+            },
+            "check_contradictory_actions": {
+              "type": "boolean",
+              "description": "Whether to detect contradictory action references.",
+              "default": true
+            },
+            "check_incompatible_versions": {
+              "type": "boolean",
+              "description": "Whether to detect incompatible component versions.",
+              "default": true
+            },
+            "unknown_is_conflict": {
+              "type": "boolean",
+              "description": "Whether unknown predicates trigger conflict detection.",
+              "default": false
+            }
+          }
+        },
+        "on_conflict": {
+          "type": "string",
+          "enum": ["precedence_wins", "first_wins", "merge", "escalate", "deny_all"],
+          "description": "Primary conflict resolution behavior."
+        },
+        "precedence_resolution": {
+          "type": "object",
+          "description": "Configuration for precedence_wins strategy.",
+          "properties": {
+            "apply_precedence": {
+              "type": "boolean",
+              "description": "Whether to apply precedence rules to resolve conflicts.",
+              "default": true
+            },
+            "require_clear_winner": {
+              "type": "boolean",
+              "description": "Whether a clear precedence winner is required.",
+              "default": true
+            }
+          }
+        },
+        "merge_strategy": {
+          "type": "object",
+          "description": "Configuration for merge strategy.",
+          "properties": {
+            "merge_fields": {
+              "type": "array",
+              "description": "Fields that can be merged (others trigger conflict).",
+              "items": { "type": "string" }
+            },
+            "array_merge": {
+              "type": "string",
+              "enum": ["append", "union", "intersect"],
+              "description": "How to merge array fields."
+            },
+            "object_merge": {
+              "type": "string",
+              "enum": ["shallow", "deep"],
+              "description": "How to merge object fields."
+            }
+          }
+        },
+        "escalation_config": {
+          "type": "object",
+          "description": "Configuration for escalate strategy.",
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "Escalation target (system, role, or process)."
+            },
+            "urgency": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "critical"],
+              "description": "Escalation urgency level."
+            },
+            "include_conflict_details": {
+              "type": "boolean",
+              "description": "Whether to include conflict details in escalation.",
+              "default": true
+            }
+          }
+        },
+        "deny_all_config": {
+          "type": "object",
+          "description": "Configuration for deny_all strategy.",
+          "properties": {
+            "log_conflict": {
+              "type": "boolean",
+              "description": "Whether to log the conflict.",
+              "default": true
+            },
+            "notify": {
+              "type": "array",
+              "description": "Notification targets.",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "fact_resolution": {
+      "type": "object",
+      "description": "How fact bindings are resolved and prioritized.",
+      "properties": {
+        "source_priority": {
+          "type": "array",
+          "description": "Fact source priority order.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": { "type": "string" },
+              "priority": { "type": "integer" }
+            }
+          }
+        },
+        "unknown_propagation": {
+          "type": "string",
+          "enum": ["explicit", "fail_closed", "assume_default"],
+          "description": "How unknown fact values propagate."
+        },
+        "stale_handling": {
+          "type": "string",
+          "enum": ["reject", "warn", "ignore"],
+          "description": "How to handle stale facts (past freshness threshold)."
+        },
+        "cache_strategy": {
+          "type": "object",
+          "description": "Fact caching strategy.",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "default_ttl": {
+              "type": "integer",
+              "description": "Default cache TTL in seconds."
+            },
+            "per_source_ttl": {
+              "type": "object",
+              "description": "Source-specific cache TTLs.",
+              "additionalProperties": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "registry_configuration": {
+      "type": "object",
+      "description": "Authoritative registry configuration for this resolution profile.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["local", "distributed", "hierarchical"],
+          "description": "Registry type."
+        },
+        "primary_registry": {
+          "type": "string",
+          "format": "uri",
+          "description": "Primary registry URI."
+        },
+        "fallback_registries": {
+          "type": "array",
+          "description": "Fallback registries in priority order.",
+          "items": { "type": "string", "format": "uri" }
+        },
+        "cache_duration": {
+          "type": "integer",
+          "description": "How long to cache registry results in seconds."
+        },
+        "consistency": {
+          "type": "string",
+          "enum": ["strong", "eventual", "monotonic"],
+          "description": "Consistency model for registry reads."
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "description": "Validation rules for this resolution profile.",
+      "properties": {
+        "require_explicit_scope": {
+          "type": "boolean",
+          "description": "Whether EKOs must declare explicit applicability.",
+          "default": true
+        },
+        "require_precedence_declaration": {
+          "type": "boolean",
+          "description": "Whether EKOs must declare precedence values.",
+          "default": false
+        },
+        "max_applicable_ekos": {
+          "type": "integer",
+          "description": "Maximum number of applicable EKOs before error."
+        },
+        "require_evidence_freshness": {
+          "type": "boolean",
+          "description": "Whether evidence must meet freshness thresholds.",
+          "default": true
+        }
+      }
+    }
+  }
+}

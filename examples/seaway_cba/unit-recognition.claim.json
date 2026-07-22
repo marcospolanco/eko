@@ -1,0 +1,65 @@
+{
+  "$schema": "https://eko.dev/schemas/eko.schema.json",
+  "eko": "unit-recognition-claim",
+  "version": "1.0.0",
+  "profile": "claim",
+  "metadata": {
+    "created_at": "2026-07-21T18:50:00Z",
+    "owner": "AFGE-Local-1968-Joint-Council",
+    "description": "Bargaining unit recognition and scope claim derived from Article 1 of the SLSDC & AFGE Local 1968 CBA."
+  },
+  "interpreter": {
+    "name": "eko-ir",
+    "version": "v0.2.0"
+  },
+  "resolution_profile": "temporal-hierarchical-cba",
+  "component": {
+    "claim": {
+      "statement": "employee.is_bargaining_unit_member == true",
+      "subject": "employee",
+      "predicate": "is_bargaining_unit_member",
+      "value": true
+    },
+    "evidence": {
+      "source": "Seaway_AFGE_CBA.pdf (Article 1: Recognition and Unit Determination)",
+      "source_uri": "file://Seaway_AFGE_CBA.pdf#page=1",
+      "authority": "Federal Labor Relations Authority (FLRA)",
+      "retrieved_at": "2026-07-21T18:00:00Z",
+      "verified_at": "2026-07-21T18:00:00Z",
+      "freshness_days": 365,
+      "confidence": "high"
+    },
+    "verification_method": "system_queried",
+    "falsifiable": true
+  },
+  "tests": [
+    {
+      "name": "unit-member-verified",
+      "type": "happy_path",
+      "description": "Verify bargaining unit membership correctly returns true for covered employees.",
+      "fixture": {
+        "employee_position": "Vessel Operations",
+        "bargaining_unit": "Local 1968"
+      },
+      "expected": {
+        "is_bargaining_unit_member": true
+      },
+      "assertions": [
+        "is_bargaining_unit_member == true",
+        "verification_method == 'system_queried'"
+      ]
+    }
+  ],
+  "attestations": [
+    {
+      "type": "approval",
+      "authority": "AFGE-Local-1968-President",
+      "timestamp": "2026-07-21T18:50:00Z"
+    },
+    {
+      "type": "verification",
+      "authority": "FLRA-Case-1-RO-40003",
+      "timestamp": "2026-07-21T18:00:00Z"
+    }
+  ]
+}

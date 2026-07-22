@@ -1,0 +1,18 @@
+{
+  "name": "grievance-step1-deadline-expired",
+  "type": "edge_case",
+  "description": "Verifies that an informal grievance initiated 20 days after the incident exceeds Article 15's 15-day limit.",
+  "fixture": {
+    "days_since_incident": 20,
+    "step1_completed": false
+  },
+  "expected": {
+    "final_state": "escalation_deadline_expired",
+    "step1_allowed": false,
+    "status": "EXPIRED"
+  },
+  "assertions": [
+    "days_since_incident > 15",
+    "step1_allowed == false"
+  ]
+}

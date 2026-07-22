@@ -1,0 +1,124 @@
+{
+  "$schema": "https://eko.dev/schemas/resolution-profile.schema.json",
+  "profile_id": "temporal-hierarchical-cba",
+  "description": "Resolution profile for SLSDC & AFGE Local 1968 CBA governing scope precedence, temporal updates, and policy conflict handling.",
+  "applicability_strategy": "hybrid",
+  "scope_resolution": {
+    "hierarchy": [
+      "jurisdiction",
+      "tenant",
+      "audience"
+    ],
+    "wildcard_behavior": "match_explicit_only",
+    "inheritance": {
+      "allow_parent_match": true,
+      "default_scope": "SLSDC-Seaway-Zone"
+    }
+  },
+  "precedence": {
+    "strategy": "composite",
+    "temporal": {
+      "compare_field": "metadata.effective",
+      "direction": "newest_wins",
+      "grace_period_seconds": 86400
+    },
+    "hierarchical": {
+      "authority_levels": [
+        {
+          "level": 1,
+          "authorities": ["FLRA", "5_USC_Chapter_71", "Federal_Labor_Relations_Authority"]
+        },
+        {
+          "level": 2,
+          "authorities": ["SLSDC-AFGE-CBA", "Collective_Bargaining_Agreement"]
+        },
+        {
+          "level": 3,
+          "authorities": ["SLSDC-Agency_Manual", "SLSDC-HR-Directives"]
+        },
+        {
+          "level": 4,
+          "authorities": ["Supervisor_Guidance", "Department_Practices"]
+        }
+      ],
+      "parent_override": false
+    },
+    "composite": {
+      "strategies": [
+        {
+          "strategy": "hierarchical",
+          "weight": 0.7
+        },
+        {
+          "strategy": "temporal",
+          "weight": 0.3
+        }
+      ],
+      "tiebreaker": "first_wins"
+    }
+  },
+  "conflict_resolution": {
+    "detection": {
+      "check_overlapping_scope": true,
+      "check_contradictory_actions": true,
+      "check_incompatible_versions": true,
+      "unknown_is_conflict": false
+    },
+    "on_conflict": "precedence_wins",
+    "precedence_resolution": {
+      "apply_precedence": true,
+      "require_clear_winner": true
+    },
+    "escalation_config": {
+      "target": "joint_labor_management_council",
+      "urgency": "high",
+      "include_conflict_details": true
+    }
+  },
+  "fact_resolution": {
+    "source_priority": [
+      {
+        "source": "hr.employee.official_records",
+        "priority": 10
+      },
+      {
+        "source": "timekeeping_system",
+        "priority": 8
+      },
+      {
+        "source": "calendar.federal_holidays",
+        "priority": 9
+      },
+      {
+        "source": "employee_self_reported",
+        "priority": 2
+      }
+    ],
+    "unknown_propagation": "explicit",
+    "stale_handling": "warn",
+    "cache_strategy": {
+      "enabled": true,
+      "default_ttl": 3600,
+      "per_source_ttl": {
+        "calendar.federal_holidays": 86400,
+        "hr.employee.official_records": 7200
+      }
+    }
+  },
+  "registry_configuration": {
+    "type": "hierarchical",
+    "primary_registry": "eko://registry.slsdc.gov/official",
+    "fallback_registries": [
+      "eko://registry.afge1968.org/union",
+      "eko://registry.flra.gov/federal"
+    ],
+    "cache_duration": 300,
+    "consistency": "strong"
+  },
+  "validation": {
+    "require_explicit_scope": true,
+    "require_precedence_declaration": false,
+    "max_applicable_ekos": 50,
+    "require_evidence_freshness": true
+  }
+}

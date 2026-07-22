@@ -1,0 +1,20 @@
+{
+  "name": "overtime-daily-time-and-half",
+  "type": "happy_path",
+  "description": "Verify daily overtime exceeding 8 hours triggers 1.5x multiplier.",
+  "fixture": {
+    "is_bargaining_unit_member": true,
+    "hours_worked_today": 10.0,
+    "is_holiday": false
+  },
+  "expected": {
+    "final_state": "approve_time_and_a_half",
+    "rate_multiplier": 1.5,
+    "status": "APPROVED"
+  },
+  "assertions": [
+    "final_state == 'approve_time_and_a_half'",
+    "rate_multiplier == 1.5",
+    "hours_worked_today > 8"
+  ]
+}

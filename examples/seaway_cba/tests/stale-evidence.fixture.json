@@ -1,0 +1,20 @@
+{
+  "name": "evidence-stale-freshness-check",
+  "type": "edge_case",
+  "description": "Verify detection of stale evidence exceeding freshness threshold.",
+  "fixture": {
+    "evidence_retrieved_at": "2025-01-01T00:00:00Z",
+    "current_date": "2026-07-21T00:00:00Z",
+    "freshness_days": 365
+  },
+  "expected": {
+    "freshness_status": "STALE",
+    "days_since_retrieval": 571,
+    "status": "FRESHNESS_VIOLATION"
+  },
+  "assertions": [
+    "days_since_retrieval > freshness_days",
+    "freshness_status == 'STALE'",
+    "status == 'FRESHNESS_VIOLATION'"
+  ]
+}

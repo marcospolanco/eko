@@ -1,0 +1,305 @@
+{
+  "$schema": "https://eko.dev/schemas/eko.schema.json",
+  "eko": "grievance-arbitration-procedure",
+  "version": "1.0.0",
+  "profile": "procedure",
+  "metadata": {
+    "created_at": "2026-07-21T18:50:00Z",
+    "owner": "SLSDC-HR-and-AFGE-Local-1968-Grievance-Committee",
+    "description": "Four-step formal grievance and binding arbitration workflow established under Article 15."
+  },
+  "interpreter": {
+    "name": "eko-ir",
+    "version": "v0.2.0"
+  },
+  "resolution_profile": "temporal-hierarchical-cba",
+  "component": {
+    "procedure": {
+      "id": "grievance-arbitration-procedure",
+      "outcome": "Resolution of employee grievance or issuance of binding arbitration award."
+    },
+    "steps": [
+      {
+        "order": 1,
+        "action": "informal_discussion_step1",
+        "capability": "grievance.step1.conduct",
+        "conditions": [
+          "days_since_incident <= 15"
+        ],
+        "on_failure": "stop",
+        "compensation": {
+          "action": "notify_incident_report_filed",
+          "capability": "hr.notification.log"
+        }
+      },
+      {
+        "order": 2,
+        "action": "formal_written_grievance_step2",
+        "capability": "grievance.step2.file",
+        "conditions": [
+          "step1_completed == true",
+          "days_since_step1_answer <= 10"
+        ],
+        "on_failure": "escalate",
+        "compensation": {
+          "action": "notify_labor_relations",
+          "capability": "hr.escalation.notify"
+        }
+      },
+      {
+        "order": 3,
+        "action": "administrator_appeal_step3",
+        "capability": "grievance.step3.appeal",
+        "conditions": [
+          "step2_completed == true",
+          "days_since_step2_answer <= 10"
+        ],
+        "on_failure": "escalate",
+        "compensation": {
+          "action": "notify_associate_administrator",
+          "capability": "hr.administrator.notify"
+        }
+      },
+      {
+        "order": 4,
+        "action": "binding_arbitration_step4",
+        "capability": "grievance.arbitration.invoke",
+        "conditions": [
+          "step3_completed == true",
+          "days_since_step3_answer <= 30"
+        ],
+        "on_failure": "stop",
+        "compensation": {
+          "action": "notify_arbitration_initiation_failed",
+          "capability": "hr.arbitration.notify"
+        }
+      }
+    ],
+    "fact_bindings": [
+      {
+        "name": "days_since_incident",
+        "source": "grievance.timeline.days_since_incident",
+        "type": "number",
+        "required": true,
+        "on_unknown": "abstain"
+      },
+      {
+        "name": "step1_completed",
+        "source": "grievance.step1.record_status",
+        "type": "boolean",
+        "required": true,
+        "on_unknown": "ask"
+      },
+      {
+        "name": "days_since_step1_answer",
+        "source": "grievance.step1.answer_days",
+        "type": "number",
+        "required": true,
+        "on_unknown": "abstain"
+      },
+      {
+        "name": "step2_completed",
+        "source": "grievance.step2.record_status",
+        "type": "boolean",
+        "required": true,
+        "on_unknown": "ask"
+      },
+      {
+        "name": "days_since_step2_answer",
+        "source": "grievance.step2.answer_days",
+        "type": "number",
+        "required": true,
+        "on_unknown": "abstain"
+      },
+      {
+        "name": "step3_completed",
+        "source": "grievance.step3.record_status",
+        "type": "boolean",
+        "required": true,
+        "on_unknown": "ask"
+      },
+      {
+        "name": "days_since_step3_answer",
+        "source": "grievance.step3.answer_days",
+        "type": "number",
+        "required": true,
+        "on_unknown": "abstain"
+      },
+      {
+        "name": "article_violated",
+        "source": "grievance.alleged_article",
+        "type": "string",
+        "required": true,
+        "allowed_values": ["Article 1", "Article 2", "Article 3", "Article 4", "Article 5", "Article 6", "Article 7", "Article 8", "Article 9", "Article 10", "Article 11", "Article 12", "Article 13", "Article 14", "Article 15", "Article 16", "Article 17", "Article 18", "Article 19", "Article 20", "Article 21", "Article 22", "Article 23", "Article 24", "Article 25", "Article 26", "Article 27", "Article 28", "Article 29", "Article 30"],
+        "on_unknown": "ask"
+      }
+    ],
+    "behavioral_conduct": {
+      "required_explanations": [
+        {
+          "when": "escalation_deadline_expired",
+          "template": "Grievance not initiated within 15-calendar-day limit per Article 15; requires Union waiver or waiver denied."
+        },
+        {
+          "when": "step2_denied",
+          "template": "Formal grievance under Article 15 denied; employee has 10 calendar days to appeal to Associate Administrator."
+        },
+        {
+          "when": "arbitration_invoked",
+          "template": "Binding arbitration invoked under Article 15; arbitrator selection within 30 days per FLRA guidelines."
+        }
+      ],
+      "prohibited_conduct": [
+        {
+          "action": "retaliation_for_grievance_filing",
+          "reason": "Article 15 expressly prohibits retaliation; violations subject to separate grievance and ULP filing"
+        },
+        {
+          "action": "deadline_extension_without_agreement",
+          "reason": "Time limits are binding per Article 15; extensions require written Union-Management agreement"
+        },
+        {
+          "action": "reprisal_during_arbitration",
+          "reason": "Arbitration phase protected; reprisals constitute Unfair Labor Practice"
+        }
+      ],
+      "escalation_paths": [
+        {
+          "condition": "days_since_incident > 15 AND employee_requests_extension",
+          "target": "joint_labor_management_council",
+          "urgency": "medium"
+        },
+        {
+          "condition": "step3_denied AND union_authorizes_arbitration",
+          "target": "flra_arbitration_services",
+          "urgency": "high"
+        },
+        {
+          "condition": "alleged_retaliation_detected",
+          "target": "flra_unfair_labor_practice",
+          "urgency": "critical"
+        }
+      ]
+    }
+  },
+  "tests": [
+    {
+      "name": "grievance-step1-deadline-expired",
+      "type": "edge_case",
+      "description": "Verify that informal grievance initiated 20 days after incident exceeds Article 15's 15-day limit.",
+      "fixture": {
+        "days_since_incident": 20,
+        "step1_completed": false
+      },
+      "expected": {
+        "final_state": "escalation_deadline_expired",
+        "step1_allowed": false,
+        "status": "EXPIRED"
+      },
+      "assertions": [
+        "days_since_incident > 15",
+        "step1_allowed == false",
+        "final_state == 'escalation_deadline_expired'"
+      ]
+    },
+    {
+      "name": "grievance-step2-valid-transition",
+      "type": "happy_path",
+      "description": "Verify valid transition from Step 1 to Step 2 grievance.",
+      "fixture": {
+        "days_since_incident": 10,
+        "step1_completed": true,
+        "days_since_step1_answer": 5
+      },
+      "expected": {
+        "next_step": 2,
+        "step2_eligible": true,
+        "status": "STEP2_AUTHORIZED"
+      },
+      "assertions": [
+        "step1_completed == true",
+        "days_since_step1_answer <= 10",
+        "step2_eligible == true"
+      ]
+    },
+    {
+      "name": "grievance-step3-valid-appeal",
+      "type": "happy_path",
+      "description": "Verify valid appeal from Step 2 to Step 3 administrator appeal.",
+      "fixture": {
+        "step1_completed": true,
+        "step2_completed": true,
+        "days_since_step2_answer": 8
+      },
+      "expected": {
+        "next_step": 3,
+        "step3_eligible": true,
+        "status": "STEP3_AUTHORIZED"
+      },
+      "assertions": [
+        "step2_completed == true",
+        "days_since_step2_answer <= 10",
+        "step3_eligible == true"
+      ]
+    },
+    {
+      "name": "grievance-arbitration-eligible",
+      "type": "happy_path",
+      "description": "Verify binding arbitration eligibility after Step 3 completion.",
+      "fixture": {
+        "step1_completed": true,
+        "step2_completed": true,
+        "step3_completed": true,
+        "days_since_step3_answer": 25
+      },
+      "expected": {
+        "arbitration_eligible": true,
+        "status": "ARBITRATION_AUTHORIZED"
+      },
+      "assertions": [
+        "step3_completed == true",
+        "days_since_step3_answer <= 30",
+        "arbitration_eligible == true"
+      ]
+    },
+    {
+      "name": "grievance-step2-deadline-missed",
+      "type": "edge_case",
+      "description": "Verify Step 2 deadline of 10 days after Step 1 answer.",
+      "fixture": {
+        "step1_completed": true,
+        "days_since_step1_answer": 12
+      },
+      "expected": {
+        "step2_eligible": false,
+        "status": "DEADLINE_EXPIRED"
+      },
+      "assertions": [
+        "days_since_step1_answer > 10",
+        "step2_eligible == false"
+      ]
+    }
+  ],
+  "attestations": [
+    {
+      "type": "approval",
+      "authority": "AFGE-Local-1968-Grievance-Representative",
+      "timestamp": "2026-07-21T18:50:00Z"
+    },
+    {
+      "type": "approval",
+      "authority": "SLSDC-HR-Director",
+      "timestamp": "2026-07-21T18:52:00Z"
+    },
+    {
+      "type": "verification",
+      "authority": "FLRA-Regional-Director-Case-Review",
+      "timestamp": "2026-07-21T19:00:00Z"
+    }
+  ],
+  "deployment": {
+    "environments": ["production"],
+    "rollout_strategy": "gradual",
+    "canary_percentage": 10
+  }
+}

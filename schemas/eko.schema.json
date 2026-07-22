@@ -1,0 +1,766 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eko.dev/schemas/eko.schema.json",
+  "title": "Executable Knowledge Object",
+  "description": "A governed, typed representation that connects evidence and authority to bounded behavior within a declared scope. An EKO is an immutable release artifact composed from typed components.",
+  "type": "object",
+  "required": ["eko", "version", "profile", "metadata"],
+  "properties": {
+    "eko": {
+      "type": "string",
+      "description": "Stable identifier for this EKO (e.g., 'refund-policy', 'eligibility-claim'). This name does not change across versions."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version following semver.org (major.minor.patch). Major changes indicate incompatible updates; minor changes add compatible features; patch changes are backwards-compatible fixes.",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "profile": {
+      "type": "string",
+      "description": "The type profile determines which component structure is required and what accountability regime applies.",
+      "enum": ["claim", "policy", "procedure", "action_contract", "composite"]
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "interpreter": {
+      "$ref": "#/$defs/interpreter_pin",
+      "description": "Pinned interpreter specification for reproducible execution."
+    },
+    "resolution_profile": {
+      "$ref": "#/$defs/resolution_profile_ref",
+      "description": "Reference to applicability, conflict resolution, and precedence semantics."
+    },
+    "component": {
+      "description": "The profile-specific component structure. Exactly one must be present based on the profile type.",
+      "oneOf": [
+        { "$ref": "#/$defs/claim_component" },
+        { "$ref": "#/$defs/policy_component" },
+        { "$ref": "#/$defs/procedure_component" },
+        { "$ref": "#/$defs/action_contract_component" },
+        { "$ref": "#/$defs/composite_component" }
+      ]
+    },
+    "tests": {
+      "type": "array",
+      "description": "Test fixtures that verify expected behavior, edge cases, and failure modes.",
+      "items": { "$ref": "#/$defs/test" }
+    },
+    "attestations": {
+      "type": "array",
+      "description": "Formal attestations about this release including approvals, signatures, and verifications.",
+      "items": { "$ref": "#/$defs/attestation" }
+    },
+    "deployment": {
+      "$ref": "#/$defs/deployment",
+      "description": "Deployment constraints, rollout configuration, and rollback targets."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "profile": { "const": "claim" } } },
+      "then": { "required": ["component"], "properties": { "component": { "$ref": "#/$defs/claim_component" } } }
+    },
+    {
+      "if": { "properties": { "profile": { "const": "policy" } } },
+      "then": { "required": ["component"], "properties": { "component": { "$ref": "#/$defs/policy_component" } } }
+    },
+    {
+      "if": { "properties": { "profile": { "const": "procedure" } } },
+      "then": { "required": ["component"], "properties": { "component": { "$ref": "#/$defs/procedure_component" } } }
+    },
+    {
+      "if": { "properties": { "profile": { "const": "action_contract" } } },
+      "then": { "required": ["component"], "properties": { "component": { "$ref": "#/$defs/action_contract_component" } } }
+    },
+    {
+      "if": { "properties": { "profile": { "const": "composite" } } },
+      "then": { "required": ["component"], "properties": { "component": { "$ref": "#/$defs/composite_component" } } }
+    }
+  ],
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about the EKO including provenance, ownership, and temporal validity.",
+      "required": ["created_at", "owner"],
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this release was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this release was last modified."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Team or individual responsible for this EKO."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this EKO."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Optional tags for categorization and discovery.",
+          "items": { "type": "string" }
+        },
+        "effective": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this EKO becomes effective (default is created_at)."
+        },
+        "expires": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this EKO ceases to be effective (optional; absence means no explicit expiration)."
+        }
+      }
+    },
+    "interpreter_pin": {
+      "type": "object",
+      "description": "Pinned interpreter specification for reproducible execution.",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Interpreter name or identifier (e.g., 'eko-ir', 'eko-reference-impl')."
+        },
+        "version": {
+          "type": "string",
+          "description": "Interpreter version (e.g., 'v0.2.0', '1.0.0-rc1')."
+        },
+        "config": {
+          "type": "object",
+          "description": "Interpreter-specific configuration options."
+        }
+      }
+    },
+    "resolution_profile_ref": {
+      "type": "string",
+      "description": "Reference to a resolution profile defining applicability, conflict resolution, and precedence semantics. May be a named profile ('temporal-jurisdictional') or a URI."
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Evidence supporting claims or policies, including sources, authority, and freshness.",
+      "required": ["source"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Source document, system, or authority (e.g., 'policy-handbook-v3.4', 'regulation-X-2025')."
+        },
+        "source_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional URI for the source."
+        },
+        "authority": {
+          "type": "string",
+          "description": "Authorizing entity (e.g., 'finance-dept', 'regulatory-body')."
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When evidence was retrieved or verified."
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When evidence was last verified against the source."
+        },
+        "hash": {
+          "type": "string",
+          "description": "Content hash of source if applicable."
+        },
+        "freshness_days": {
+          "type": "integer",
+          "description": "Maximum acceptable age in days before evidence is considered stale."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "unverified"],
+          "description": "Confidence level in evidence accuracy."
+        }
+      }
+    },
+    "applicability": {
+      "type": "object",
+      "description": "Static scope conditions defining when this EKO applies.",
+      "properties": {
+        "audience": {
+          "type": "array",
+          "description": "Target audiences for this EKO.",
+          "items": { "type": "string" }
+        },
+        "jurisdiction": {
+          "type": "array",
+          "description": "Jurisdictional scope (e.g., ['US', 'EU', 'CA']).",
+          "items": { "type": "string" }
+        },
+        "product": {
+          "type": "array",
+          "description": "Product or service scope.",
+          "items": { "type": "string" }
+        },
+        "tenant": {
+          "type": "array",
+          "description": "Tenant or customer scope.",
+          "items": { "type": "string" }
+        },
+        "channel": {
+          "type": "array",
+          "description": "Channel scope (e.g., ['web', 'api', 'phone']).",
+          "items": { "type": "string" }
+        },
+        "predicates": {
+          "type": "array",
+          "description": "Custom applicability predicates as declarative expressions.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "fact_binding": {
+      "type": "object",
+      "description": "Contract for obtaining a runtime fact and handling unknown values.",
+      "required": ["name", "source"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Fact name as referenced in predicates and rules."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source system or query (e.g., 'order_system.orders.{id}.date')."
+        },
+        "type": {
+          "type": "string",
+          "description": "Expected data type.",
+          "enum": ["string", "number", "integer", "boolean", "datetime", "decimal", "enum"]
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this fact is required for execution.",
+          "default": true
+        },
+        "default": {
+          "description": "Default value if fact is unavailable (use cautiously; prefer explicit unknown handling)."
+        },
+        "allowed_values": {
+          "type": "array",
+          "description": "Allowed values for enum-type facts.",
+          "items": { "type": "string" }
+        },
+        "on_unknown": {
+          "type": "string",
+          "enum": ["ask", "abstain", "refuse", "escalate", "use_default"],
+          "description": "Behavior when fact value is unknown."
+        },
+        "escalation_target": {
+          "type": "string",
+          "description": "Escalation target when on_unknown is 'escalate'."
+        },
+        "cache_ttl_seconds": {
+          "type": "integer",
+          "description": "How long to cache fact value in seconds."
+        }
+      }
+    },
+    "test": {
+      "type": "object",
+      "description": "Test fixture verifying expected behavior.",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Test name."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["happy_path", "unknown_fact", "conflict", "denied", "escalation", "edge_case"],
+          "description": "Test category."
+        },
+        "description": {
+          "type": "string",
+          "description": "Test description."
+        },
+        "fixture": {
+          "type": "object",
+          "description": "Input facts and context for the test.",
+          "additionalProperties": true
+        },
+        "expected": {
+          "type": "object",
+          "description": "Expected outcome (state, action, or decision).",
+          "additionalProperties": true
+        },
+        "assertions": {
+          "type": "array",
+          "description": "Assertions to verify.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "description": "Formal attestation about this release.",
+      "required": ["type", "authority", "timestamp"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["approval", "signature", "verification", "review", "security_scan"],
+          "description": "Attestation type."
+        },
+        "authority": {
+          "type": "string",
+          "description": "Entity providing the attestation."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When attestation was provided."
+        },
+        "signature": {
+          "type": "string",
+          "description": "Cryptographic signature (if applicable)."
+        },
+        "method": {
+          "type": "string",
+          "description": "Method used for attestation."
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional URI for attestation details."
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "description": "Deployment constraints and configuration.",
+      "properties": {
+        "environments": {
+          "type": "array",
+          "description": "Targeted environments.",
+          "items": {
+            "type": "string",
+            "enum": ["development", "staging", "production", "all"]
+          }
+        },
+        "rollout_strategy": {
+          "type": "string",
+          "enum": ["immediate", "gradual", "canary"],
+          "description": "Rollout strategy."
+        },
+        "canary_percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Canary rollout percentage (if gradual/canary)."
+        },
+        "rollback_target": {
+          "type": "string",
+          "description": "Version to rollback to if issues detected (format: 'eko@version')."
+        },
+        "monitoring": {
+          "type": "object",
+          "description": "Monitoring and alerting configuration.",
+          "properties": {
+            "alert_on": {
+              "type": "array",
+              "description": "Conditions that trigger alerts.",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "behavioral_conduct": {
+      "type": "object",
+      "description": "Behavioral constraints including explanations, prohibitions, and uncertainty handling.",
+      "properties": {
+        "required_explanations": {
+          "type": "array",
+          "description": "Explanation templates required for specific outcomes.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "when": { "type": "string" },
+              "template": { "type": "string" }
+            }
+          }
+        },
+        "prohibited_conduct": {
+          "type": "array",
+          "description": "Explicitly prohibited actions or behaviors.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "action": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "uncertainty_handling": {
+          "type": "string",
+          "enum": ["explicit", "implicit_with_risk", "fail_closed"],
+          "description": "How to handle uncertain conditions."
+        },
+        "escalation_paths": {
+          "type": "array",
+          "description": "Escalation paths for unresolved conditions.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": { "type": "string" },
+              "target": { "type": "string" },
+              "urgency": { "type": "string", "enum": ["low", "medium", "high", "critical"] }
+            }
+          }
+        }
+      }
+    },
+    "claim_component": {
+      "type": "object",
+      "description": "Claim profile: an empirical assertion supported by evidence and subject to verification.",
+      "required": ["claim", "evidence"],
+      "properties": {
+        "claim": {
+          "type": "object",
+          "description": "The assertion being made.",
+          "required": ["statement"],
+          "properties": {
+            "statement": {
+              "type": "string",
+              "description": "The claim statement (e.g., 'refund_window_days = 30')."
+            },
+            "subject": {
+              "type": "string",
+              "description": "What the claim is about."
+            },
+            "predicate": {
+              "type": "string",
+              "description": "The predicate or property being claimed."
+            },
+            "value": {
+              "description": "The claimed value."
+            }
+          }
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidence"
+        },
+        "verification_method": {
+          "type": "string",
+          "description": "How this claim can be verified."
+        },
+        "falsifiable": {
+          "type": "boolean",
+          "description": "Whether this claim is falsifiable through observation or test.",
+          "default": true
+        }
+      }
+    },
+    "policy_component": {
+      "type": "object",
+      "description": "Policy profile: a normative rule enacted by authority with scope and precedence.",
+      "required": ["policy", "evidence", "rule_ir"],
+      "properties": {
+        "policy": {
+          "type": "object",
+          "description": "Policy definition.",
+          "required": ["id", "authority"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Policy identifier."
+            },
+            "authority": {
+              "type": "string",
+              "description": "Authorizing entity or authority."
+            },
+            "effective": {
+              "type": "string",
+              "format": "date",
+              "description": "Effective date."
+            },
+            "jurisdiction": {
+              "type": "array",
+              "description": "Jurisdictional scope.",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidence"
+        },
+        "applicability": {
+          "$ref": "#/$defs/applicability"
+        },
+        "fact_bindings": {
+          "type": "array",
+          "description": "Required runtime facts for this policy.",
+          "items": { "$ref": "#/$defs/fact_binding" }
+        },
+        "rule_ir": {
+          "$ref": "rule-ir.schema.json",
+          "description": "Rule intermediate representation defining conditions and transitions."
+        },
+        "precedence": {
+          "type": "object",
+          "description": "Precedence configuration relative to other policies.",
+          "properties": {
+            "priority": {
+              "type": "integer",
+              "description": "Numeric priority (higher = more precedence)."
+            },
+            "overrides": {
+              "type": "array",
+              "description": "Policy IDs this one overrides.",
+              "items": { "type": "string" }
+            },
+            "superseded_by": {
+              "type": "array",
+              "description": "Policy IDs that supersede this one.",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "behavioral_conduct": {
+          "$ref": "#/$defs/behavioral_conduct"
+        }
+      }
+    },
+    "procedure_component": {
+      "type": "object",
+      "description": "Procedure profile: a sequence of steps toward an outcome with behavioral correctness evaluation.",
+      "required": ["procedure", "steps"],
+      "properties": {
+        "procedure": {
+          "type": "object",
+          "description": "Procedure definition.",
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Procedure identifier."
+            },
+            "outcome": {
+              "type": "string",
+              "description": "Intended outcome of this procedure."
+            }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "description": "Ordered steps in the procedure.",
+          "items": {
+            "type": "object",
+            "required": ["order", "action"],
+            "properties": {
+              "order": {
+                "type": "integer",
+                "description": "Step order (1-indexed)."
+              },
+              "action": {
+                "type": "string",
+                "description": "Action name or identifier."
+              },
+              "capability": {
+                "type": "string",
+                "description": "Required capability for this action."
+              },
+              "contracts": {
+                "type": "object",
+                "description": "Action-specific contracts and constraints.",
+                "additionalProperties": true
+              },
+              "conditions": {
+                "type": "array",
+                "description": "Conditions that must be met for this step.",
+                "items": { "type": "string" }
+              },
+              "on_failure": {
+                "type": "string",
+                "enum": ["stop", "retry", "compensate", "escalate"],
+                "description": "Behavior when step fails."
+              },
+              "compensation": {
+                "type": "object",
+                "description": "Compensation action if this step needs to be rolled back.",
+                "properties": {
+                  "action": { "type": "string" },
+                  "capability": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "fact_bindings": {
+          "type": "array",
+          "description": "Required runtime facts for this procedure.",
+          "items": { "$ref": "#/$defs/fact_binding" }
+        },
+        "behavioral_conduct": {
+          "$ref": "#/$defs/behavioral_conduct"
+        }
+      }
+    },
+    "action_contract_component": {
+      "type": "object",
+      "description": "Action contract profile: binds declared intent to a real capability and tool interface.",
+      "required": ["action_contract", "interface"],
+      "properties": {
+        "action_contract": {
+          "type": "object",
+          "description": "Action contract definition.",
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Action contract identifier."
+            },
+            "action": {
+              "type": "string",
+              "description": "Action name this contract governs."
+            }
+          }
+        },
+        "interface": {
+          "type": "string",
+          "description": "Tool interface identifier (e.g., 'payment.process_refund')."
+        },
+        "capability_required": {
+          "type": "string",
+          "description": "Required capability grant (e.g., 'payment.refund.issued')."
+        },
+        "parameters": {
+          "type": "array",
+          "description": "Parameter schema for this action.",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Parameter name."
+              },
+              "type": {
+                "type": "string",
+                "description": "Parameter type."
+              },
+              "required": {
+                "type": "boolean",
+                "default": true
+              },
+              "constraints": {
+                "type": "string",
+                "description": "Validation constraints."
+              }
+            }
+          }
+        },
+        "side_effects": {
+          "type": "array",
+          "description": "Declared side effects.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["external_call", "state_change", "notification", "logging"],
+                "description": "Side effect type."
+              },
+              "system": {
+                "type": "string",
+                "description": "Target system or component."
+              },
+              "idempotency": {
+                "type": "string",
+                "enum": ["idempotent", "client_supplied_id", "none"],
+                "description": "Idempotency behavior."
+              }
+            }
+          }
+        },
+        "compensation": {
+          "type": "object",
+          "description": "Compensation behavior on failure.",
+          "properties": {
+            "on_failure": {
+              "type": "string",
+              "description": "Compensation action on failure."
+            },
+            "action": {
+              "type": "string",
+              "description": "Compensation action name."
+            }
+          }
+        }
+      }
+    },
+    "composite_component": {
+      "type": "object",
+      "description": "Composite profile: a release envelope that binds compatible component versions together.",
+      "required": ["composite", "components"],
+      "properties": {
+        "composite": {
+          "type": "object",
+          "description": "Composite definition.",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Composite release name."
+            },
+            "description": {
+              "type": "string",
+              "description": "Composite description."
+            }
+          }
+        },
+        "components": {
+          "type": "array",
+          "description": "Pinned components in this composite release.",
+          "items": {
+            "type": "object",
+            "required": ["ref", "version"],
+            "properties": {
+              "ref": {
+                "type": "string",
+                "description": "Component reference (format: 'profile:name')."
+              },
+              "version": {
+                "type": "string",
+                "description": "Component version constraint (exact or semantic)."
+              },
+              "digest": {
+                "type": "string",
+                "description": "Content digest for integrity verification."
+              }
+            }
+          }
+        },
+        "compatibility_matrix": {
+          "type": "array",
+          "description": "Compatibility constraints between components.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ensures": {
+                "type": "string",
+                "description": "Constraint that must be satisfied."
+              },
+              "components": {
+                "type": "array",
+                "description": "Components involved in this constraint.",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

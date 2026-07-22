@@ -1,0 +1,368 @@
+{
+  "$schema": "https://eko.dev/schemas/eko.schema.json",
+  "eko": "overtime-distribution-policy",
+  "version": "1.0.0",
+  "profile": "policy",
+  "metadata": {
+    "created_at": "2026-07-21T18:50:00Z",
+    "owner": "SLSDC-Labor-Relations-and-AFGE-Local-1968",
+    "description": "Overtime distribution rules, daily/weekly thresholds, and holiday multipliers under Articles 9 and 10."
+  },
+  "interpreter": {
+    "name": "eko-ir",
+    "version": "v0.2.0"
+  },
+  "resolution_profile": "temporal-hierarchical-cba",
+  "component": {
+    "policy": {
+      "id": "overtime-distribution-policy",
+      "authority": "SLSDC-Management-and-AFGE-Local-1968",
+      "effective": "2016-06-20",
+      "jurisdiction": ["US-NY", "SLSDC-Seaway-Zone"]
+    },
+    "evidence": {
+      "source": "Seaway_AFGE_CBA.pdf (Article 9: Overtime, Article 10: Premium Pay)",
+      "source_uri": "file://Seaway_AFGE_CBA.pdf#page=12",
+      "authority": "SLSDC-AFGE-CBA",
+      "retrieved_at": "2026-07-21T18:00:00Z",
+      "verified_at": "2026-07-21T18:00:00Z",
+      "freshness_days": 365,
+      "confidence": "high"
+    },
+    "applicability": {
+      "audience": ["bargaining_unit_employee"],
+      "jurisdiction": ["US-NY"],
+      "product": ["seaway_operations"]
+    },
+    "fact_bindings": [
+      {
+        "name": "is_bargaining_unit_member",
+        "source": "hr.employee.is_bargaining_unit",
+        "type": "boolean",
+        "required": true,
+        "on_unknown": "refuse"
+      },
+      {
+        "name": "hours_worked_today",
+        "source": "timekeeping.daily_hours",
+        "type": "number",
+        "required": true,
+        "on_unknown": "escalate",
+        "escalation_target": "payroll_supervisor",
+        "cache_ttl_seconds": 3600
+      },
+      {
+        "name": "is_holiday",
+        "source": "calendar.is_federal_holiday",
+        "type": "boolean",
+        "required": true,
+        "on_unknown": "ask"
+      },
+      {
+        "name": "seniority_rank",
+        "source": "payroll.seniority_rank",
+        "type": "integer",
+        "required": false,
+        "on_unknown": "use_default",
+        "default": 0
+      },
+      {
+        "name": "last_overtime_offered_date",
+        "source": "overtime_log.last_offer_date",
+        "type": "datetime",
+        "required": false,
+        "on_unknown": "use_default",
+        "default": null
+      }
+    ],
+    "rule_ir": {
+      "initial_state": "check_eligibility",
+      "variables": [
+        {
+          "name": "rate_multiplier",
+          "type": "decimal",
+          "source": "computed"
+        },
+        {
+          "name": "daily_threshold",
+          "type": "integer",
+          "source": "constant"
+        }
+      ],
+      "constants": {
+        "daily_threshold": 8
+      },
+      "states": [
+        {
+          "id": "check_eligibility",
+          "description": "Verify bargaining unit membership prior to calculating overtime entitlement.",
+          "type": "decision",
+          "transitions": [
+            {
+              "condition": "is_bargaining_unit_member == true",
+              "to": "calculate_overtime_rate",
+              "priority": 10
+            },
+            {
+              "condition": "is_bargaining_unit_member == false",
+              "to": "ineligible_non_unit",
+              "priority": 5
+            },
+            {
+              "condition": "is_bargaining_unit_member == null",
+              "to": "refuse_unknown_status",
+              "priority": 1
+            }
+          ]
+        },
+        {
+          "id": "calculate_overtime_rate",
+          "description": "Determine rate multiplier based on daily hours and holiday status.",
+          "type": "decision",
+          "transitions": [
+            {
+              "condition": "is_holiday == true",
+              "to": "approve_double_time",
+              "label": "Federal holiday work"
+            },
+            {
+              "condition": "hours_worked_today > daily_threshold AND is_holiday == false",
+              "to": "approve_time_and_a_half",
+              "label": "Daily overtime threshold exceeded"
+            },
+            {
+              "condition": "hours_worked_today <= daily_threshold AND is_holiday == false",
+              "to": "regular_rate",
+              "label": "Standard hours within threshold"
+            },
+            {
+              "condition": "hours_worked_today == null",
+              "to": "request_hours_info",
+              "label": "Hours data unavailable"
+            }
+          ]
+        },
+        {
+          "id": "approve_double_time",
+          "description": "Holiday overtime rate approved (2.0x multiplier).",
+          "type": "terminal",
+          "on_entry": [
+            {
+              "type": "state_change",
+              "target": "rate_multiplier",
+              "parameters": {
+                "value": 2.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "approve_time_and_a_half",
+          "description": "Standard daily overtime rate approved (1.5x multiplier).",
+          "type": "terminal",
+          "on_entry": [
+            {
+              "type": "state_change",
+              "target": "rate_multiplier",
+              "parameters": {
+                "value": 1.5
+              }
+            }
+          ]
+        },
+        {
+          "id": "regular_rate",
+          "description": "Standard rate applied (1.0x multiplier).",
+          "type": "terminal",
+          "on_entry": [
+            {
+              "type": "state_change",
+              "target": "rate_multiplier",
+              "parameters": {
+                "value": 1.0
+              }
+            }
+          ]
+        },
+        {
+          "id": "ineligible_non_unit",
+          "description": "Non-bargaining unit employee ineligible for CBA overtime rules.",
+          "type": "error",
+          "on_entry": [
+            {
+              "type": "notification",
+              "target": "labor_relations_notification"
+            }
+          ]
+        },
+        {
+          "id": "refuse_unknown_status",
+          "description": "Employee bargaining unit status unknown; refusing overtime calculation per on_unknown policy.",
+          "type": "error"
+        },
+        {
+          "id": "request_hours_info",
+          "description": "Hours worked data missing; requesting from timekeeping system.",
+          "type": "action",
+          "transitions": [
+            {
+              "to": "calculate_overtime_rate",
+              "action": {
+                "type": "capability",
+                "target": "timekeeping.query_hours",
+                "parameters": {
+                  "employee_id": "${employee_id}",
+                  "date": "${today}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "precedence": {
+      "priority": 5,
+      "overrides": [],
+      "superseded_by": []
+    },
+    "behavioral_conduct": {
+      "required_explanations": [
+        {
+          "when": "final_state == 'approve_double_time'",
+          "template": "Holiday overtime rate (2.0x) approved under Article 10 for federal holiday work on {holiday_date}."
+        },
+        {
+          "when": "final_state == 'approve_time_and_a_half'",
+          "template": "Daily overtime rate (1.5x) approved under Article 9 for {hours_worked} hours worked exceeding {daily_threshold} hour threshold."
+        },
+        {
+          "when": "final_state == 'ineligible_non_unit'",
+          "template": "Employee not eligible for CBA overtime rates: non-bargaining unit position per Article 1."
+        }
+      ],
+      "prohibited_conduct": [
+        {
+          "action": "overtime_assignment_without_seniority",
+          "reason": "Article 9 requires seniority-based rotation; skip-list requires Union agreement"
+        },
+        {
+          "action": "holiday_work_without_volunteer_or_emergency",
+          "reason": "Article 10 requires voluntary sign-up or emergency designation for holiday work"
+        }
+      ],
+      "escalation_paths": [
+        {
+          "condition": "hours_worked_today > 12",
+          "target": "safety_review",
+          "urgency": "medium"
+        },
+        {
+          "condition": "is_bargaining_unit_member == false AND hours_worked_today > 8",
+          "target": "labor_relations_review",
+          "urgency": "high"
+        }
+      ]
+    }
+  },
+  "tests": [
+    {
+      "name": "overtime-holiday-double-time",
+      "type": "happy_path",
+      "description": "Verify federal holiday work triggers 2.0x multiplier.",
+      "fixture": {
+        "is_bargaining_unit_member": true,
+        "hours_worked_today": 8.0,
+        "is_holiday": true
+      },
+      "expected": {
+        "final_state": "approve_double_time",
+        "rate_multiplier": 2.0,
+        "status": "APPROVED"
+      },
+      "assertions": [
+        "final_state == 'approve_double_time'",
+        "rate_multiplier == 2.0",
+        "is_bargaining_unit_member == true"
+      ]
+    },
+    {
+      "name": "overtime-daily-time-and-half",
+      "type": "happy_path",
+      "description": "Verify daily overtime exceeding 8 hours triggers 1.5x multiplier.",
+      "fixture": {
+        "is_bargaining_unit_member": true,
+        "hours_worked_today": 10.0,
+        "is_holiday": false
+      },
+      "expected": {
+        "final_state": "approve_time_and_a_half",
+        "rate_multiplier": 1.5,
+        "status": "APPROVED"
+      },
+      "assertions": [
+        "final_state == 'approve_time_and_a_half'",
+        "rate_multiplier == 1.5",
+        "hours_worked_today == 10.0"
+      ]
+    },
+    {
+      "name": "regular-rate-no-overtime",
+      "type": "happy_path",
+      "description": "Verify hours at or below 8-hour threshold trigger regular rate.",
+      "fixture": {
+        "is_bargaining_unit_member": true,
+        "hours_worked_today": 6.0,
+        "is_holiday": false
+      },
+      "expected": {
+        "final_state": "regular_rate",
+        "rate_multiplier": 1.0,
+        "status": "APPROVED"
+      },
+      "assertions": [
+        "final_state == 'regular_rate'",
+        "rate_multiplier == 1.0"
+      ]
+    },
+    {
+      "name": "non-unit-employee-ineligible",
+      "type": "edge_case",
+      "description": "Verify non-bargaining unit employees are ineligible.",
+      "fixture": {
+        "is_bargaining_unit_member": false,
+        "hours_worked_today": 10.0,
+        "is_holiday": false
+      },
+      "expected": {
+        "final_state": "ineligible_non_unit",
+        "status": "INELIGIBLE"
+      },
+      "assertions": [
+        "final_state == 'ineligible_non_unit'",
+        "is_bargaining_unit_member == false"
+      ]
+    }
+  ],
+  "attestations": [
+    {
+      "type": "approval",
+      "authority": "SLSDC-Labor-Relations-Director",
+      "timestamp": "2026-07-21T18:50:00Z"
+    },
+    {
+      "type": "approval",
+      "authority": "AFGE-Local-1968-President",
+      "timestamp": "2026-07-21T18:55:00Z"
+    },
+    {
+      "type": "verification",
+      "authority": "Joint-Labor-Management-Council",
+      "timestamp": "2026-07-21T19:00:00Z"
+    }
+  ],
+  "deployment": {
+    "environments": ["production"],
+    "rollout_strategy": "immediate",
+    "rollback_target": "overtime-distribution-policy@0.9.0"
+  }
+}

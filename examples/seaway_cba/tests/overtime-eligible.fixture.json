@@ -1,0 +1,20 @@
+{
+  "name": "overtime-eligible-holiday-double-time",
+  "type": "happy_path",
+  "description": "Verifies that working on a federal holiday triggers double-time (2.0x) multiplier under Article 10.",
+  "fixture": {
+    "is_bargaining_unit_member": true,
+    "hours_worked_today": 8.0,
+    "is_holiday": true
+  },
+  "expected": {
+    "final_state": "approve_double_time",
+    "rate_multiplier": 2.0,
+    "status": "APPROVED"
+  },
+  "assertions": [
+    "state == 'approve_double_time'",
+    "multiplier == 2.0",
+    "is_bargaining_unit_member == true"
+  ]
+}

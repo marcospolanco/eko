@@ -1,0 +1,19 @@
+{
+  "name": "unknown-fact-abstain-membership",
+  "type": "unknown_fact",
+  "description": "Verifies that when bargaining unit status is unknown, EKO triggers refusal rather than guessing.",
+  "fixture": {
+    "is_bargaining_unit_member": null,
+    "hours_worked_today": 10.0,
+    "is_holiday": false
+  },
+  "expected": {
+    "final_state": "ineligible_non_unit",
+    "on_unknown_triggered": "refuse",
+    "status": "REFUSED_UNKNOWN_FACT"
+  },
+  "assertions": [
+    "is_bargaining_unit_member == null",
+    "on_unknown == 'refuse'"
+  ]
+}

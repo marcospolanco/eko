@@ -1,0 +1,20 @@
+{
+  "name": "grievance-step2-valid-transition",
+  "type": "happy_path",
+  "description": "Verify valid transition from Step 1 to Step 2 grievance within 10-day window.",
+  "fixture": {
+    "days_since_incident": 10,
+    "step1_completed": true,
+    "days_since_step1_answer": 5
+  },
+  "expected": {
+    "next_step": 2,
+    "step2_eligible": true,
+    "status": "STEP2_AUTHORIZED"
+  },
+  "assertions": [
+    "step1_completed == true",
+    "days_since_step1_answer <= 10",
+    "step2_eligible == true"
+  ]
+}

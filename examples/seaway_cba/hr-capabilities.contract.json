@@ -1,0 +1,181 @@
+{
+  "$schema": "https://eko.dev/schemas/eko.schema.json",
+  "eko": "hr-grievance-action-contract",
+  "version": "1.0.0",
+  "profile": "action_contract",
+  "metadata": {
+    "created_at": "2026-07-21T18:50:00Z",
+    "owner": "SLSDC-HR-Systems-Security",
+    "description": "Capability security contract governing automated creation and escalation of grievance records."
+  },
+  "interpreter": {
+    "name": "eko-ir",
+    "version": "v0.2.0"
+  },
+  "resolution_profile": "temporal-hierarchical-cba",
+  "component": {
+    "action_contract": {
+      "id": "hr-grievance-action-contract",
+      "action": "file_grievance_record"
+    },
+    "interface": "hr.grievance_system.v1",
+    "capability_required": "hr.grievance.file",
+    "parameters": [
+      {
+        "name": "employee_id",
+        "type": "string",
+        "required": true,
+        "constraints": "minLength: 3, maxLength: 50, pattern:^[A-Z0-9-]+$"
+      },
+      {
+        "name": "step_number",
+        "type": "integer",
+        "required": true,
+        "constraints": ">= 1 and <= 4"
+      },
+      {
+        "name": "article_violated",
+        "type": "string",
+        "required": true,
+        "constraints": "pattern: ^Article (1?[0-9]|2[0-9]|30)$"
+      },
+      {
+        "name": "incident_date",
+        "type": "datetime",
+        "required": false,
+        "constraints": "must be within 365 days of current_date"
+      },
+      {
+        "name": "narrative",
+        "type": "string",
+        "required": false,
+        "constraints": "maxLength: 5000"
+      }
+    ],
+    "side_effects": [
+      {
+        "type": "state_change",
+        "system": "hr_database",
+        "idempotency": "client_supplied_id"
+      },
+      {
+        "type": "notification",
+        "system": "labor_relations_email",
+        "idempotency": "idempotent"
+      },
+      {
+        "type": "logging",
+        "system": "audit_log",
+        "idempotency": "idempotent"
+      }
+    ],
+    "compensation": {
+      "on_failure": "notify_labor_relations",
+      "action": "cancel_grievance_submission",
+      "capability": "hr.grievance.cancel"
+    }
+  },
+  "tests": [
+    {
+      "name": "grievance-file-valid-step1",
+      "type": "happy_path",
+      "description": "Verify valid grievance filing for Step 1 with all required parameters.",
+      "fixture": {
+        "employee_id": "ABC-12345",
+        "step_number": 1,
+        "article_violated": "Article 9"
+      },
+      "expected": {
+        "file_result": "CREATED",
+        "grievance_id": "generated",
+        "status": "FILED"
+      },
+      "assertions": [
+        "step_number == 1",
+        "article_violated matches pattern",
+        "file_result == 'CREATED'"
+      ]
+    },
+    {
+      "name": "grievance-file-invalid-step",
+      "type": "edge_case",
+      "description": "Verify rejection for invalid step number.",
+      "fixture": {
+        "employee_id": "ABC-12345",
+        "step_number": 5,
+        "article_violated": "Article 15"
+      },
+      "expected": {
+        "file_result": "REJECTED",
+        "reason": "invalid_step_number",
+        "status": "FAILED"
+      },
+      "assertions": [
+        "step_number > 4",
+        "file_result == 'REJECTED'"
+      ]
+    },
+    {
+      "name": "grievance-file-invalid-article",
+      "type": "edge_case",
+      "description": "Verify rejection for invalid article format.",
+      "fixture": {
+        "employee_id": "ABC-12345",
+        "step_number": 2,
+        "article_violated": "InvalidArticle"
+      },
+      "expected": {
+        "file_result": "REJECTED",
+        "reason": "invalid_article_format",
+        "status": "FAILED"
+      },
+      "assertions": [
+        "article_violated does not match pattern",
+        "file_result == 'REJECTED'"
+      ]
+    },
+    {
+      "name": "grievance-idempotent-retry",
+      "type": "edge_case",
+      "description": "Verify idempotent behavior on retry with same client ID.",
+      "fixture": {
+        "employee_id": "ABC-12345",
+        "step_number": 1,
+        "article_violated": "Article 10",
+        "client_idempotency_key": "retry-12345"
+      },
+      "expected": {
+        "file_result": "EXISTS",
+        "grievance_id": "existing_grievance_id",
+        "status": "DUPLICATE"
+      },
+      "assertions": [
+        "file_result == 'EXISTS'",
+        "grievance_id preserved from initial submission"
+      ]
+    }
+  ],
+  "attestations": [
+    {
+      "type": "approval",
+      "authority": "SLSDC-IT-Security-Director",
+      "timestamp": "2026-07-21T18:50:00Z"
+    },
+    {
+      "type": "verification",
+      "authority": "HR-Systems-Architect",
+      "timestamp": "2026-07-21T18:55:00Z",
+      "method": "penetration_test_vulnerability_scan"
+    }
+  ],
+  "deployment": {
+    "environments": ["production"],
+    "rollout_strategy": "immediate",
+    "monitoring": {
+      "alert_on": [
+        "file_failure_rate > 0.05",
+        "compensation_invoked > 10 per hour"
+      ]
+    }
+  }
+}

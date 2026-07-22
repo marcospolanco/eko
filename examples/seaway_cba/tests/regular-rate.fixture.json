@@ -1,0 +1,20 @@
+{
+  "name": "regular-rate-no-overtime",
+  "type": "happy_path",
+  "description": "Verify hours at or below 8-hour threshold trigger regular rate (1.0x).",
+  "fixture": {
+    "is_bargaining_unit_member": true,
+    "hours_worked_today": 6.0,
+    "is_holiday": false
+  },
+  "expected": {
+    "final_state": "regular_rate",
+    "rate_multiplier": 1.0,
+    "status": "APPROVED"
+  },
+  "assertions": [
+    "final_state == 'regular_rate'",
+    "rate_multiplier == 1.0",
+    "hours_worked_today == 6.0"
+  ]
+}
