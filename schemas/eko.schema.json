@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://eko.dev/schemas/eko.schema.json",
+  "$id": "file:schemas/eko.schema.json",
   "title": "Executable Knowledge Object",
   "description": "A governed, typed representation that connects evidence and authority to bounded behavior within a declared scope. An EKO is an immutable release artifact composed from typed components.",
   "type": "object",

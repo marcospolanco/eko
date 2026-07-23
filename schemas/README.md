@@ -2,6 +2,10 @@
 
 This directory contains the canonical, machine-readable EKO schemas.
 
+**New to this directory?** Read [`../eko-learning-path.md`](../eko-learning-path.md) first: a progressive tutorial on why these three files exist and how they fit together.
+
+> Recommended entrypoint: start with [`../eko-learning-path.md`](../eko-learning-path.md) if you want the narrative before the schema details.
+
 ## Schema Files
 
 | File | Purpose | Status |
@@ -59,18 +63,27 @@ The resolution profile schema defines:
 Use any JSON Schema 2020-12 compliant validator:
 
 ```bash
-# Using ajv (JavaScript)
-ajv validate schemas/eko.schema.json examples/refund-policy/eko.json
+# Validate an EKO component from the repository root.
+jsonschema -i examples/seaway_cba/overtime-rules.policy.json schemas/eko.schema.json
 
-# Using jsonschema (Python)
-jsonschema -i examples/refund-policy/eko.json schemas/eko.schema.json
+# Validate its separately governed resolution profile.
+jsonschema -i examples/seaway_cba/resolution-profile.json schemas/resolution-profile.schema.json
 ```
 
-### Normative Behavior
+### What the schemas mean
 
-JSON Schema cannot express all normative behavior. Additional semantics specified in:
-- `docs/execution-model.md` — compile, link, execute semantics
-- Test fixtures in `tests/schema/` — expected validation outcomes
+The schemas define a release contract, not an interpreter. Their normative design commitments are:
+
+| Commitment | Consequence |
+|---|---|
+| Profile selects accountability | A `claim`, `policy`, `procedure`, `action_contract`, and `composite` cannot be treated as interchangeable content. |
+| Rule IR is declarative | Rules declare states, transitions, predicates, and action references. They do not embed arbitrary executable code. |
+| Facts are declared dependencies | A policy names the runtime facts it needs and its response when a fact is unknown. |
+| Capabilities are externally granted | An action contract can name an allowed tool interface; it cannot grant itself authority to use that tool. |
+| Resolution is governed separately | Applicability, precedence, conflicts, and stale facts are not left to retrieval order or model preference. |
+| Interpretation is pinned | A release identifies the interpreter expected to give the declarations meaning. |
+
+JSON Schema can validate structure and many local constraints. It cannot prove that a predicate has the intended meaning, that source evidence is faithful, that an attestation is genuine, or that an interpreter behaves correctly. Those require a pinned interpreter, review, and external authority.
 
 ## Schema Concerns
 
@@ -93,7 +106,7 @@ Current limitations and planned extensions:
 
 - **Expression language**: predicates use string expressions; formal syntax to be specified
 - **Capability format**: capability references are strings; formal schema pending
-- **Attestation format**: signatures use string placeholders; cryptographic format TBD
+- **Attestation format**: signatures are strings only; a cryptographic format is TBD
 - **Test fixture format**: test structure defined; assertion language TBD
 - **Compensation semantics**: compensation declared; detailed execution semantics TBD
 
@@ -110,4 +123,3 @@ For major schema changes, propose via issue with:
 - Proposed change
 - Impact analysis
 - Migration path
-

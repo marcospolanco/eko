@@ -343,26 +343,5 @@
       ]
     }
   ],
-  "attestations": [
-    {
-      "type": "approval",
-      "authority": "SLSDC-Labor-Relations-Director",
-      "timestamp": "2026-07-21T18:50:00Z"
-    },
-    {
-      "type": "approval",
-      "authority": "AFGE-Local-1968-President",
-      "timestamp": "2026-07-21T18:55:00Z"
-    },
-    {
-      "type": "verification",
-      "authority": "Joint-Labor-Management-Council",
-      "timestamp": "2026-07-21T19:00:00Z"
-    }
-  ],
-  "deployment": {
-    "environments": ["production"],
-    "rollout_strategy": "immediate",
-    "rollback_target": "overtime-distribution-policy@0.9.0"
-  }
+  "attestations": []
 }

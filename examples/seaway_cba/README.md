@@ -1,6 +1,6 @@
 # Seaway AFGE CBA EKO Family
 
-A complete, validated example demonstrating how a complex Collective Bargaining Agreement can be represented as governed, testable Executable Knowledge Objects.
+An illustrative, schema-valid conversion showing how a Collective Bargaining Agreement can be represented as governed, testable Executable Knowledge Objects. It is not an approved interpretation of the agreement and does not represent an SLSDC, AFGE, or FLRA release.
 
 ## Overview
 
@@ -12,7 +12,7 @@ This example converts the **Saint Lawrence Seaway Development Corporation (SLSDC
 - **HR capability contracts** for grievance filing
 - **Resolution profile** for precedence and conflict handling
 
-All artifacts are **100% compliant** with the canonical JSON Schemas in [`../../../schemas/`](../../../schemas/).
+The artifacts validate locally against the draft schemas in [`../../schemas/`](../../schemas/). The behavioral fixtures are expected outcomes for a future pinned interpreter, not executed runtime tests.
 
 ---
 
@@ -20,12 +20,12 @@ All artifacts are **100% compliant** with the canonical JSON Schemas in [`../../
 
 | File | Profile | Description | Status |
 |------|---------|-------------|--------|
-| [`unit-recognition.claim.json`](unit-recognition.claim.json) | `claim` | Bargaining unit scope & eligibility based on Article 1 and FLRA legal certification. | ✅ Validated |
-| [`overtime-rules.policy.json`](overtime-rules.policy.json) | `policy` | Overtime distribution rules, daily/weekly thresholds, 1.5x/2.0x multipliers under Articles 9 & 10. | ✅ Validated |
-| [`grievance-procedure.json`](grievance-procedure.json) | `procedure` | 4-step formal grievance & binding arbitration workflow under Article 15 with 15-day/10-day timeline checks. | ✅ Validated |
-| [`hr-capabilities.contract.json`](hr-capabilities.contract.json) | `action_contract` | Bounded tool capability contract (`hr.grievance.file`) with parameters, idempotency, and compensation fallback. | ✅ Validated |
-| [`resolution-profile.json`](resolution-profile.json) | *Resolution* | Precedence ordering, temporal validity, and conflict resolution rules. | ✅ Validated |
-| [`seaway-cba.composite.json`](seaway-cba.composite.json) | `composite` | Master release envelope pinning compatible versions of all components with integrity digests. | ✅ Validated |
+| [`unit-recognition.claim.json`](unit-recognition.claim.json) | `claim` | Bargaining unit scope and eligibility, grounded in Article 1. | Draft example |
+| [`overtime-rules.policy.json`](overtime-rules.policy.json) | `policy` | Daily and holiday overtime rules under Articles 9 and 10. | Draft example |
+| [`grievance-procedure.json`](grievance-procedure.json) | `procedure` | Four-step grievance and arbitration workflow under Article 15. | Draft example |
+| [`hr-capabilities.contract.json`](hr-capabilities.contract.json) | `action_contract` | Bounded `hr.grievance.file` interface with compensation fallback. | Draft example |
+| [`resolution-profile.json`](resolution-profile.json) | *Resolution* | Precedence, temporal validity, and conflict-handling rules. | Draft example |
+| [`seaway-cba.composite.json`](seaway-cba.composite.json) | `composite` | Release envelope that pins compatible versions and content digests. | Draft example |
 
 ---
 
@@ -33,19 +33,16 @@ All artifacts are **100% compliant** with the canonical JSON Schemas in [`../../
 
 ### Schema Compliance
 
-All JSON files validate against their canonical schemas:
+The EKO artifacts validate against `eko.schema.json`; the resolution profile validates against its dedicated schema:
 
 ```bash
-# Validate a single file
-ajv validate -s ../../../schemas/eko.schema.json -d unit-recognition.claim.json
+# Run from the repository root.
+jsonschema -i examples/seaway_cba/overtime-rules.policy.json schemas/eko.schema.json
 
-# Validate all files
-for file in *.json; do
-    ajv validate -s ../../../schemas/eko.schema.json -d "$file"
-done
+jsonschema -i examples/seaway_cba/resolution-profile.json schemas/resolution-profile.schema.json
 ```
 
-Expected output: `PASS` with zero validation errors.
+The commands exit successfully with zero validation errors.
 
 ### Content Digests
 
@@ -53,7 +50,7 @@ The composite release uses actual SHA256 content digests:
 
 ```bash
 # Verify component digests
-shasum -a 256 unit-recognition.claim.json overtime-rules.policy.json grievance-procedure.json hr-capabilities.contract.json
+shasum -a 256 unit-recognition.claim.json overtime-rules.policy.json grievance-procedure.json hr-capabilities.contract.json resolution-profile.json
 ```
 
 ---
@@ -74,7 +71,7 @@ Comprehensive test fixtures under [`tests/`](tests/) verify expected behavior:
 
 ### Running Tests
 
-Tests can be executed using any JSON-compliant test framework that supports fixture-based validation.
+These fixtures are the behavioral specification. A runtime test runner is intentionally not included in this submission.
 
 ---
 
@@ -171,13 +168,12 @@ graph LR
 
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
-| Schema validation | ✅ PASS | All files validate with zero errors |
-| Deterministic execution | ✅ PASS | 7 test fixtures covering happy paths, edge cases, unknown facts |
-| Traceability | ✅ PASS | All rules link to CBA articles with source URIs |
-| Behavioral conduct | ✅ PASS | All components include prohibited conduct and escalation paths |
-| Interpreter pinning | ✅ PASS | All components include interpreter specification |
-| Attestations | ✅ PASS | All components include approval/verification attestations |
-| Content digests | ✅ PASS | Composite uses actual SHA256 digests |
+| Schema validation | Verified locally | All six artifacts validate with zero errors. |
+| Behavioral execution | Not provided | Seven fixtures specify expected and failure outcomes for a future interpreter. |
+| Traceability | Illustrative | Rules cite the agreement and its articles; legal fidelity has not been independently reviewed. |
+| Interpreter pinning | Declared | EKO artifacts identify the intended interpreter version. |
+| Attestations | Not claimed | No external approvals, signatures, or verifications are represented. |
+| Content digests | Verified locally | The composite pins the SHA-256 digest of each component. |
 
 ---
 
@@ -187,10 +183,6 @@ graph LR
 - **Parties:** Saint Lawrence Seaway Development Corporation (DOT) & AFGE Local 1968
 - **Effective:** June 20, 2016 – September 30, 2018 (with annual renewal)
 
-## Conversion Plan
-
-See [`plan.md`](plan.md) for complete conversion strategy, component mapping, and phase roadmap.
-
 ## Contributing
 
 This example serves as reference material for EKO implementation. Suggestions for improvement should maintain:
@@ -198,7 +190,7 @@ This example serves as reference material for EKO implementation. Suggestions fo
 - Evidence linkage to CBA articles
 - Test fixture completeness
 - Behavioral conduct explicitness
-- Attestation chains
+- Clear distinction between illustrative data and external approval
 
 ## License
 

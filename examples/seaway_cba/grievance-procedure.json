@@ -280,26 +280,5 @@
       ]
     }
   ],
-  "attestations": [
-    {
-      "type": "approval",
-      "authority": "AFGE-Local-1968-Grievance-Representative",
-      "timestamp": "2026-07-21T18:50:00Z"
-    },
-    {
-      "type": "approval",
-      "authority": "SLSDC-HR-Director",
-      "timestamp": "2026-07-21T18:52:00Z"
-    },
-    {
-      "type": "verification",
-      "authority": "FLRA-Regional-Director-Case-Review",
-      "timestamp": "2026-07-21T19:00:00Z"
-    }
-  ],
-  "deployment": {
-    "environments": ["production"],
-    "rollout_strategy": "gradual",
-    "canary_percentage": 10
-  }
+  "attestations": []
 }

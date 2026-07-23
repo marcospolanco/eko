@@ -22,27 +22,27 @@
       {
         "ref": "claim:unit-recognition-claim",
         "version": "1.0.0",
-        "digest": "sha256:1235d3094cb0aa4ca9aa1139fb7c730c95061d979b549969b4bf27859e9ac0df"
+        "digest": "sha256:530a09d1b1c4cda731935e2b5d727455902e8a3f6c377da459a9605f9e38dd3d"
       },
       {
         "ref": "policy:overtime-distribution-policy",
         "version": "1.0.0",
-        "digest": "sha256:785d267799ff140acdcd1dcd1718eae118b5e65fee75a063cfe2784e324f0f41"
+        "digest": "sha256:ab8a48c6b7d557dc921e11d1d9fbb296e641b810f1477d3d965d4ad95087faab"
       },
       {
         "ref": "procedure:grievance-arbitration-procedure",
         "version": "1.0.0",
-        "digest": "sha256:15470f586aa61f5e352fe1221411cca4b43c10a5945a9601dea23828d12e4815"
+        "digest": "sha256:eba79cecad4596db00458a8256cf84c973551419fc5b3e0f9df8fef7b17d0fdc"
       },
       {
         "ref": "action_contract:hr-grievance-action-contract",
         "version": "1.0.0",
-        "digest": "sha256:f46014514be57c78a4c77ec3232f576af11f6b0f2acf980a7690af3781f97ac0"
+        "digest": "sha256:2589f42b3bc7dc80b7cd1e6a3a5cefdc05bf71cf2d55883db552db42ab800be5"
       },
       {
         "ref": "resolution:temporal-hierarchical-cba",
         "version": "1.0.0",
-        "digest": "sha256:placeholder"
+        "digest": "sha256:d17ba298103e5080c1d4e6d8facc0f25d5f2463164d2624bb1785eafa1eda4cd"
       }
     ],
     "compatibility_matrix": [
@@ -87,40 +87,5 @@
       ]
     }
   ],
-  "attestations": [
-    {
-      "type": "approval",
-      "authority": "SLSDC-Corporate-Counsel",
-      "timestamp": "2026-07-21T19:00:00Z"
-    },
-    {
-      "type": "approval",
-      "authority": "AFGE-Local-1968-Executive-Board",
-      "timestamp": "2026-07-21T19:05:00Z"
-    },
-    {
-      "type": "signature",
-      "authority": "Joint-Labor-Management-Council",
-      "timestamp": "2026-07-21T19:10:00Z",
-      "signature": "SIGNATURE_PLACEHOLDER_PRODUCTION"
-    },
-    {
-      "type": "verification",
-      "authority": "FLRA-Agreement-Compliance-Review",
-      "timestamp": "2026-07-21T19:15:00Z"
-    }
-  ],
-  "deployment": {
-    "environments": ["production"],
-    "rollout_strategy": "gradual",
-    "canary_percentage": 5,
-    "rollback_target": "seaway-afge-cba-release@0.9.0",
-    "monitoring": {
-      "alert_on": [
-        "component_validation_failure",
-        "digest_mismatch",
-        "compatibility_violation"
-      ]
-    }
-  }
+  "attestations": []
 }

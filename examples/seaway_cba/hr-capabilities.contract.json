@@ -155,27 +155,5 @@
       ]
     }
   ],
-  "attestations": [
-    {
-      "type": "approval",
-      "authority": "SLSDC-IT-Security-Director",
-      "timestamp": "2026-07-21T18:50:00Z"
-    },
-    {
-      "type": "verification",
-      "authority": "HR-Systems-Architect",
-      "timestamp": "2026-07-21T18:55:00Z",
-      "method": "penetration_test_vulnerability_scan"
-    }
-  ],
-  "deployment": {
-    "environments": ["production"],
-    "rollout_strategy": "immediate",
-    "monitoring": {
-      "alert_on": [
-        "file_failure_rate > 0.05",
-        "compensation_invoked > 10 per hour"
-      ]
-    }
-  }
+  "attestations": []
 }
