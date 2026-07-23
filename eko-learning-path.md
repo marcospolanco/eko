@@ -1,19 +1,19 @@
 # EKO Learning Path
 
-A progressive tutorial for explaining the `schemas/` architecture and why it looks the way it does.
+A progressive tutorial to the `schemas/` architecture and the reasoning behind it.
 
 **Audience:** A first-time visitor who needs to understand EKO without getting lost in JSON Schema.  
-**Hands-on companion:** [`examples/seaway_cba/`](examples/seaway_cba/), a real composite that validates against these schemas.
+**Hands-on companion:** [`examples/seaway_cba/`](examples/seaway_cba/), an illustrative composite that validates against these schemas.
 
-Status note: the schemas are **draft v0.1.0**. They encode the architecture; they are not yet a complete normative interpreter. Where draft JSON and the artifact diverge, this path says so.
+Status note: the schemas are **draft v0.1.0**. They define the release structure and important constraints, but they are not a complete interpreter specification.
 
 ---
 
-## How to use this document
+## What this path covers
 
-Read the lessons in order once. Each lesson answers one question that a skeptical listener is likely to ask. After Lesson 6, a reader can open `schemas/` and point at files with confidence. After Lesson 11, the whole system should be explainable in under five minutes.
+The lessons build from the EKO premise to the three schema files, then ground the design in the Seaway example. Each lesson begins with a practical question and ends with the key idea to carry forward.
 
-Suggested talk tracks are marked **Talk track**.
+Start with the axiom, then follow the profiles, release model, Rule IR, fact bindings, capabilities, and resolution model in order.
 
 ---
 
@@ -30,7 +30,7 @@ schemas/
 
 They exist because the design kept hitting the same failure modes: documents that cannot be tested, policies that pretend to be facts, agents that invent control flow, knowledge that grants itself power, and multi-policy enterprises with no deterministic winner.
 
-Everything else in this path is the story of those failure modes and the settlements that produced those three files.
+The rest of this path shows how those failure modes shape the three files.
 
 ---
 
@@ -42,11 +42,11 @@ For decades, knowledge systems assumed a human reader. Humans bring background c
 
 That consumer is changing. An AI system arrives with the opposite profile: huge bandwidth, zero innate organizational context, high sensitivity to ambiguity, and the ability to act at machine speed.
 
-Ashu Roy's framing (which the design absorbed without parroting) names the deeper shift: von Neumann put *instruction* on one side of a line and *data* on the other. Engineering discipline followed the instruction side: versioning, review, tests, deploy, rollback. Generative AI moved the danger. In an LLM-based system, the model is a general-purpose interpreter; the corpus it retrieves at runtime is the program. What the system *does* is determined by knowledge, not by application source code.
+Von Neumann put *instruction* on one side of a line and *data* on the other. Engineering discipline followed the instruction side: versioning, review, tests, deploy, rollback. Generative AI moves the risk. In an LLM-based system, the model is a general-purpose interpreter; the corpus it retrieves at runtime helps determine the program. What the system *does* is determined by knowledge, not only by application source code.
 
-**Talk track:** "We are not improving documentation. We are engineering the instruction layer for AI, with the same discipline we already give code."
+**Key takeaway:** EKO treats the knowledge that guides AI as an instruction layer that needs the discipline normally reserved for code.
 
-If that sentence lands, the rest of the architecture is just the consequence.
+The rest of the architecture follows from that shift.
 
 ---
 
@@ -67,7 +67,7 @@ Every word becomes structure later:
 | Correct behavior | profile-appropriate tests (Corollary 2: unevaluable "knowledge" is opinion) |
 | Defined scope | boundaries, abstain/escalate, conflict handling |
 
-Three corollaries from the artifact drive profile design:
+Three consequences drive the profile design:
 
 1. Knowledge is more than what is true (facts alone are not enough).
 2. Knowledge that cannot be evaluated is not knowledge.
@@ -90,9 +90,9 @@ Trace one example up the ladder:
 | Knowledge | "If the room exceeds 85°F, alert facilities, because equipment degrades." | Connect condition → consequence → reason |
 | Instruction | Explicit steps, prohibitions, escalation, tool bindings | Govern agent behavior |
 
-The progression is **executability**, not volume. A refund policy in production is simultaneously a number, customer-facing copy, a decision rule, a behavioral constraint, and an authorization to call a payments API. Documents force those apart. EKO holds them in one *governed release* while letting different authorities approve different pieces.
+The progression is **executability**, not volume. A refund policy in production is simultaneously a number, customer-facing copy, a decision rule, a behavioral constraint, and a request to call a payments API. Documents force those apart. EKO holds them in one *governed release* while letting different authorities approve different pieces.
 
-**Talk track:** "RAG retrieves content. EKO releases instruction. Retrieval can help discovery; it cannot be the authority."
+**Key takeaway:** RAG retrieves content. EKO releases instruction. Retrieval can help discovery; it cannot be the authority.
 
 ---
 
@@ -100,7 +100,7 @@ The progression is **executability**, not volume. A refund policy in production 
 
 **Question:** Why `claim | policy | procedure | action_contract | composite` instead of one type?
 
-Because treating everything as the same object dilutes accountability (the "conceptual dilution" critique accepted in the design conversation).
+Because treating everything as the same object dilutes accountability.
 
 | Profile | What it is | Validated by | Conflicts resolved by |
 |---|---|---|---|
@@ -112,7 +112,7 @@ Because treating everything as the same object dilutes accountability (the "conc
 
 In `eko.schema.json`, `profile` is an enum, and `allOf` conditionals force the matching `component` shape. A help-center fact is a `claim` and never needs a behavior test suite. A refund policy is typically a `composite` that pins a `policy`, presentation/evidence, and an `action_contract`.
 
-**Talk track:** "One schema, graded rigor. We do not fact-check policies or enact observations."
+**Key takeaway:** One schema supports graded rigor. Policies are not fact-checked, and observations are not enacted.
 
 A quick pass through the file should reveal:
 
@@ -225,7 +225,7 @@ classDiagram
     CompositeRelease --> ResolutionProfile
 ```
 
-This diagram is intentionally small: the goal is to show the accountability boundaries, not every field.
+The diagram shows accountability boundaries, not every field.
 
 ---
 
@@ -233,15 +233,15 @@ This diagram is intentionally small: the goal is to show the accountability boun
 
 **Question:** Why not one big mutable knowledge object?
 
-The critique accepted in the conversation: a naive monolithic object creates **false atomicity**. Legal changes the rule; communications changes the customer copy; security signs the tool binding. Those evolve at different rates and are approved by different people.
+One large mutable object creates **false atomicity**. Legal changes the rule; communications changes the customer copy; security approves the tool binding. Those evolve at different rates and are approved by different people.
 
-**Settlement:** the git model.
+EKO uses a release model analogous to git:
 
 - Components are immutable, content-addressed, independently versionable.
 - The EKO **release** is a signed manifest that pins specific component hashes (and the interpreter).
 - Deployment, canary, rollback, and audit operate on releases, not on live mutation of a document.
 
-In the draft schemas, you see this most clearly in the `composite` profile: component refs + digests + compatibility matrix (see [`examples/seaway_cba/seaway-cba.composite.json`](examples/seaway_cba/seaway-cba.composite.json)).
+In the draft schemas, the `composite` profile makes this visible through component references, digests, and a compatibility matrix (see [`examples/seaway_cba/seaway-cba.composite.json`](examples/seaway_cba/seaway-cba.composite.json)).
 
 ```text
 composite release
@@ -252,9 +252,9 @@ composite release
   └─ resolution profile pin
 ```
 
-Draft vs artifact honesty: the full artifact also pins evidence snapshots, source-to-IR maps, behavior hashes, and an append-only deployment registry. The v0.1 schemas capture the envelope and digests; they do not yet encode every annex field from the normative write-up.
+Current draft limitation: v0.1 captures the release envelope and component digests. Evidence snapshots, source-to-IR maps, behavior hashes, and a deployment registry are not yet encoded as schema fields.
 
-**Talk track:** "Atomicity of change lives at the release. Independence of approval lives at the component."
+**Key takeaway:** Atomicity of change lives at the release; independence of approval lives at the component.
 
 ---
 
@@ -263,8 +263,6 @@ Draft vs artifact honesty: the full artifact also pins evidence snapshots, sourc
 **Question:** Why a state machine IR instead of "the LLM follows the policy prose"?
 
 Because "code as data" implies a serialized program whose semantics exist only through a specific interpreter, not prose the model informally follows.
-
-From the critique that reshaped the design:
 
 ```text
 Knowledge Object (immutable, typed declarative program)
@@ -296,7 +294,7 @@ What it deliberately refuses:
 | Allowed actions, escalation paths | Authorization enforcement, approvals |
 | Reversibility *class* and remediation *intent* | Idempotency, leases, timeouts, compensation *execution* |
 
-**Talk track:** "The runtime must not decide that damaged items escalate. The knowledge must not implement its own retries."
+**Key takeaway:** Knowledge declares domain behavior. The runtime enforces execution mechanics and authorization.
 
 A quick look at `rule-ir.schema.json` should reveal `state.type` and `action_reference`. A policy example's embedded `rule_ir` in Seaway overtime rules shows how that shape gets used.
 
@@ -312,7 +310,7 @@ Every predicate input needs a **fact binding**: name, source, type, and `on_unkn
 
 Evaluation is three-valued: `true | false | unknown`. Unknown is never silently coerced into a branch.
 
-Ordering matters (this was a real hole fixed late in the artifact):
+The ordering preserves a clear boundary between deciding which release applies and executing that release:
 
 1. Static scope against the trusted invocation envelope → candidates  
 2. Acquire applicability facts using candidate bindings  
@@ -322,7 +320,7 @@ Ordering matters (this was a real hole fixed late in the artifact):
 
 In `eko.schema.json`, look at `$defs/fact_binding`. In Seaway, look at overtime `fact_bindings` and the `unknown-fact-abstain` test fixture.
 
-**Talk track:** "Missing facts are first-class. We escalate or abstain; we do not invent."
+**Key takeaway:** Missing facts are first-class outcomes. The system escalates, abstains, asks, or refuses; it does not invent.
 
 ---
 
@@ -332,7 +330,7 @@ In `eko.schema.json`, look at `$defs/fact_binding`. In Seaway, look at overtime 
 
 Because knowledge that can authorize itself is a privilege-escalation surface.
 
-Settlement:
+The boundary is explicit:
 
 - The EKO **declares** required capabilities (e.g. `payments:refund`, `hr.grievance.file`).
 - Enterprise IAM **grants** concrete, scoped, short-lived capabilities at **link** time.
@@ -347,9 +345,9 @@ Reversibility vocabulary (domain knowledge, not runtime physics):
 | reconcilable | automation contains the defect; a human must finish repair |
 | irreversible | no supported restoration path |
 
-**Talk track:** "Knowledge may say a refund MAY be issued. It can never authorize itself to issue one."
+**Key takeaway:** Knowledge may say that a refund may be issued. It cannot authorize itself to issue one.
 
-Show `action_contract` in `eko.schema.json` and [`examples/seaway_cba/hr-capabilities.contract.json`](examples/seaway_cba/hr-capabilities.contract.json).
+`action_contract` in `eko.schema.json` and [`examples/seaway_cba/hr-capabilities.contract.json`](examples/seaway_cba/hr-capabilities.contract.json) make this boundary concrete.
 
 ---
 
@@ -369,7 +367,7 @@ Typed edges (`supersedes`, `exception_to`) are not enough. Enterprises need a de
 
 Invariant resolver outcomes: `resolved | not_applicable | indeterminate | conflict`.
 
-Critical settlement from the conversation: **behavior of a selected release starts only after selection.** On `conflict` or resolution-level `indeterminate`, the **resolution profile** (constrained by a parent governance charter) refuses and escalates, not whichever release almost won. No silent tie-breaking. No global "lowest risk wins" (risk is domain-defined).
+**Behavior of a selected release starts only after selection.** On `conflict` or resolution-level `indeterminate`, the **resolution profile** refuses and escalates, not whichever release almost won. There is no silent tie-breaking or global “lowest risk wins” rule.
 
 Trust root that breaks recursion:
 
@@ -380,17 +378,15 @@ platform trust root
       → EKO releases
 ```
 
-**Talk track:** "Precedence is governed knowledge. The resolver is not. A program cannot rewrite its runtime's protections from inside."
+**Key takeaway:** Precedence is governed knowledge. The resolver is not. A program cannot rewrite its runtime protections from inside.
 
-Show [`examples/seaway_cba/resolution-profile.json`](examples/seaway_cba/resolution-profile.json): FLRA > CBA > agency guidance, temporal newest-wins, conflict detection.
+[`examples/seaway_cba/resolution-profile.json`](examples/seaway_cba/resolution-profile.json) demonstrates FLRA > CBA > agency guidance, temporal newest-wins, and conflict detection.
 
 ---
 
 ## Lesson 11: The crux: the model at both borders, citizen of neither
 
 **Question:** Where is the LLM in this architecture?
-
-This is the core claim to hold onto when explaining EKO.
 
 **Knowledge is code-as-data. The language model appears on both sides of it, and never above it.**
 
@@ -420,7 +416,7 @@ The two historic failure modes this dissolves:
 1. Hand-authored formalism nobody can maintain (classic rules/BPM)
 2. Model-improvised behavior nobody can govern (naive agents)
 
-**Punchline:** the model is the translator at both borders of knowledge, and the citizen of neither; authority belongs to the compiled, attested artifact alone.
+**Key takeaway:** The model is a translator at the borders of knowledge, not the authority within it. Authority belongs to the governed release and its approved interpreter.
 
 ### UML snapshot: authoring and runtime boundaries
 
@@ -445,13 +441,13 @@ sequenceDiagram
     Runtime-->>Human: Durable trace
 ```
 
-The sequence shows where the model can assist and where it cannot own authority.
+The sequence marks where the model can assist and where authority remains outside the model.
 
 ---
 
-## Lesson 12: Walk the schemas with Seaway (hands-on)
+## Lesson 12: Explore the schemas with Seaway
 
-Do this once with the files open. Timebox: 15 minutes.
+The following walkthrough connects each schema concept to a concrete artifact.
 
 1. Open [`schemas/README.md`](schemas/README.md): three files, ten concerns.
 2. Open [`examples/seaway_cba/README.md`](examples/seaway_cba/README.md): five profiles in one family.
@@ -463,23 +459,23 @@ Do this once with the files open. Timebox: 15 minutes.
 8. Open `seaway-cba.composite.json`: the release that pins digests together.
 9. Skim `tests/unknown-fact-abstain.fixture.json` and `tests/overtime-eligible.fixture.json`: evaluation is part of the knowledge.
 
-Optional validation:
+To validate the example locally:
 
 ```bash
-# From repo root, with ajv installed
-ajv validate -s schemas/eko.schema.json -d examples/seaway_cba/overtime-rules.policy.json
-ajv validate -s schemas/resolution-profile.schema.json -d examples/seaway_cba/resolution-profile.json
+# From the repository root, with a JSON Schema 2020-12 validator installed.
+jsonschema -i examples/seaway_cba/overtime-rules.policy.json schemas/eko.schema.json
+jsonschema -i examples/seaway_cba/resolution-profile.json schemas/resolution-profile.schema.json
 ```
 
-You have now seen every major architectural commitment as concrete JSON.
+Together, these files show the architecture as concrete JSON.
 
 ---
 
-## Lesson 13: Design decisions → schema fields (cheat sheet)
+## Lesson 13: How design pressures appear in the schema
 
-Use this when someone asks "why is this field here?"
+Each field answers a specific governance or execution concern.
 
-| Design pressure (from critiques / artifact) | Where it landed |
+| Design pressure | Where it landed |
 |---|---|
 | Truth ≠ authority | `profile` enum + per-profile `component` |
 | False atomicity of one big object | `composite` + digests; release-level deploy |
@@ -488,49 +484,45 @@ Use this when someone asks "why is this field here?"
 | No self-granted authority | `action_contract` capabilities declared only |
 | LLM must not invent control flow | `rule-ir.schema.json` constrained states |
 | Multi-policy enterprises | `resolution-profile.schema.json` |
-| Conflict ≠ IR bug | resolver `conflict` vs execution `indeterminate` (normative artifact; draft schemas approximate via conflict/escalation enums) |
-| Behavior only after selection | resolution profile failure handling (artifact); selected release `behavioral_conduct` |
+| Conflict ≠ IR bug | Resolver `conflict` vs execution `indeterminate`; draft schemas use conflict and escalation enums. |
+| Behavior only after selection | Resolution-profile failure handling; selected release `behavioral_conduct`. |
 | Reproducible execution | `interpreter` pin on the EKO |
 | Evaluation is constitutive | top-level `tests` + fixture types |
 | Authoring burden | out of schema scope; humans approve IR diffs |
 
 ---
 
-## Lesson 14: Five-minute explanation (script)
+## Lesson 14: Summary
 
-If only five minutes are available:
+EKO can be summarized in six ideas:
 
-1. **Premise (30s):** The model is the interpreter; enterprise knowledge is the program. Discipline must move with the danger.
-2. **Unit (30s):** An EKO is governed, scoped instruction that connects evidence to testable behavior.
-3. **Shape (60s):** Five profiles so claims, policies, procedures, and tool contracts are accountable differently. Releases pin immutable components like git tags pin commits.
-4. **Execution (60s):** Small Rule IR, no eval. Facts are contracted. Capabilities are declared, granted externally. Many policies resolve through a governed resolution profile.
-5. **Model boundary (60s):** Model proposes IR at authoring time and helps at the edges at runtime. Authority stays in the attested artifact.
-6. **Proof (60s):** Point at `schemas/` + Seaway example + one unknown-fact test.
-
-Stop and return to Lessons 6–11 as needed.
+1. **Premise:** The model is the interpreter; enterprise knowledge is the program. Discipline must move with the danger.
+2. **Unit:** An EKO is governed, scoped instruction that connects evidence to testable behavior.
+3. **Shape:** Five profiles make claims, policies, procedures, and tool contracts accountable in different ways. Releases pin immutable components like git tags pin commits.
+4. **Execution:** A small Rule IR declares control flow without `eval`. Facts are contracted, capabilities are declared and granted externally, and many policies resolve through a governed resolution profile.
+5. **Model boundary:** A model can propose IR at authoring time and help at the edges at runtime. Authority stays in the governed release and approved interpreter.
+6. **Concrete form:** The schemas and Seaway example express the model in machine-readable form, including an unknown-fact fixture.
 
 ---
 
 ## What the schemas do *not* fully encode yet
 
-Be honest in explanations. Draft v0.1.0 is intentionally incomplete relative to the normative artifact:
+Draft v0.1.0 has clear limits:
 
-- Predicate expressions are strings; formal expression AST / truth tables live in the artifact §4.4, not fully in JSON Schema.
-- Attestation crypto format, capability URI grammar, and compensation execution semantics are placeholders or thin.
-- Workflow-instance / trace schemas from artifact §4.6 are not separate JSON Schema files yet.
-- Authoritative registry snapshot hashing and release-admission policy are described more richly in prose than in `eko.schema.json`.
+- Predicate expressions are strings; a formal expression AST and truth tables are not yet part of JSON Schema.
+- Attestation cryptography, capability URI grammar, and compensation execution semantics are not yet fully specified.
+- Workflow-instance and trace schemas are not separate JSON Schema files yet.
+- Authoritative registry snapshot hashing and release-admission policy are not yet represented in `eko.schema.json`.
 
-That gap is fine for a learning path: the schemas are the portable skeleton; the artifact is the constitution.
+The schemas are a portable structural contract. A production implementation would require these additional semantics.
 
 ---
 
-## Suggested reading order after this path
+## Continue exploring
 
-1. [`README.md`](README.md): repo framing and what remains to be proven  
-2. [`schemas/README.md`](schemas/README.md): machine-readable surface  
-3. Artifact §§1–5 and §6: premise through resolution (skip annex-dense IR on first CEO pass)  
-4. [`examples/seaway_cba/`](examples/seaway_cba/): concrete family  
-5. [fbl-eko-convo.md](wip/fbl-eko-convo.md) and [fbl-executable-knowledge-artifact.md](wip/fbl-executable-knowledge-artifact.md): the critique-and-settlement trail behind each design choice  
+1. [`README.md`](README.md): repository framing and scope
+2. [`schemas/README.md`](schemas/README.md): machine-readable contract
+3. [`examples/seaway_cba/`](examples/seaway_cba/): concrete EKO family
 
 ---
 
@@ -561,11 +553,11 @@ That gap is fine for a learning path: the schemas are the portable skeleton; the
                  seaway_cba family
 ```
 
-When someone asks why `schemas/` "all comes together," the answer is that sentence chain, not the JSON.
+The diagram summarizes how the premise becomes a release model, schema files, and concrete examples.
 
-## UML appendix
+## UML view
 
-If you want a more traditional UML view, this is the same architecture collapsed into a deployment-oriented picture:
+This deployment-oriented view summarizes the lifecycle from prose to governed execution:
 
 ```mermaid
 flowchart LR
@@ -579,4 +571,4 @@ flowchart LR
     Interpreter --> Trace[Durable execution trace]
 ```
 
-The flowchart is the shortest way to explain the lifecycle from prose to governed execution.
+The flowchart highlights the handoffs among authoring, validation, review, resolution, and execution.
