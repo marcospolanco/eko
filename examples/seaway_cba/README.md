@@ -12,7 +12,7 @@ This example converts the **Saint Lawrence Seaway Development Corporation (SLSDC
 - **HR capability contracts** for grievance filing
 - **Resolution profile** for precedence and conflict handling
 
-The artifacts validate locally against the draft schemas in [`../../schemas/`](../../schemas/). The behavioral fixtures are expected outcomes for a future pinned interpreter, not executed runtime tests.
+The artifacts validate locally against the draft schemas in [`../../schemas/`](../../schemas/).
 
 ---
 
