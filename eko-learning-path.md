@@ -280,6 +280,37 @@ Knowledge Object (immutable, typed declarative program)
 - **Approval gates:** human / automated / hybrid
 - **Bounds:** timeouts, cycle detection
 
+### The state machine is EKO's executable core
+
+The Rule IR is a constrained **state machine** (more precisely, a directed decision graph). A state records the current governed situation; a transition records the condition under which the release may move to the next situation. This makes the allowed behavior inspectable before execution: reviewers can see every branch, terminal outcome, escalation, approval point, and capability invocation without relying on an LLM to infer missing steps.
+
+Not every EKO needs a state machine. A `claim` is evidence plus an assertion, and a simple linear `procedure` can remain an ordered sequence. Use Rule IR when behavior branches, waits for approval or facts, invokes capabilities, can escalate, or persists across multiple steps. When used, the graph is the release's declared domain behavior; the runtime still owns scheduling, authorization, retries, idempotency, and durable state.
+
+The Seaway overtime policy is a small example. It first determines eligibility, then determines the applicable rate. Missing or ineligible information leads to an explicit non-success outcome rather than a guessed calculation.
+
+```mermaid
+stateDiagram-v2
+    [*] --> check_eligibility
+
+    check_eligibility --> calculate_overtime_rate: bargaining-unit member
+    check_eligibility --> ineligible_non_unit: not a member
+    check_eligibility --> refuse_unknown_status: membership unknown
+
+    calculate_overtime_rate --> approve_double_time: holiday
+    calculate_overtime_rate --> approve_time_and_a_half: hours > threshold
+    calculate_overtime_rate --> regular_rate: hours ≤ threshold
+    calculate_overtime_rate --> request_hours_info: hours unknown
+    request_hours_info --> calculate_overtime_rate: query timekeeping
+
+    approve_double_time --> [*]
+    approve_time_and_a_half --> [*]
+    regular_rate --> [*]
+    ineligible_non_unit --> [*]
+    refuse_unknown_status --> [*]
+```
+
+The diagram is illustrative, not a second source of truth; the embedded `rule_ir` in the release is authoritative.
+
 What it deliberately refuses:
 
 - arbitrary code / `eval`

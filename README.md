@@ -69,6 +69,7 @@ Details: [`schemas/README.md`](schemas/README.md) · progressive tutorial: [`eko
 | Path | What it contains |
 |---|---|
 | [`eko-learning-path.md`](eko-learning-path.md) | Progressive architecture tutorial |
+| [`eko-impact.md`](eko-impact.md) | **For architects:** How EKO transforms the 6-phase design process, industry metrics, and rollout implications |
 | [`schemas/`](schemas/) | Draft JSON Schemas (v0.1.0) |
 | [`examples/`](examples/) | Progressive examples, including Seaway CBA |
 | [`media/`](media/) | Concept diagram and related artifacts |
