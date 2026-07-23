@@ -22,6 +22,10 @@ If knowledge is the program, it needs the discipline of a program.
 
 That means ownership and versioning, declared applicability, evidence and provenance, testable behavior, and explicit boundaries (ask, abstain, escalate). A fact alone is not enough. Truth and authority are different accountabilities, which is why EKO uses typed profiles rather than one mushy “knowledge object.”
 
+### Why this matters for agents
+
+If knowledge is the program, agent quality is no longer only a model score. EKO is aimed at **policy-compliant decisions**, **unauthorized or undeclared actions**, **escalation and human-override rates**, and **knowledge defects** (stale, conflicting, or unscoped instruction)—metrics of the instruction layer, not of the base model alone.
+
 ---
 
 ## Review this take-home in 15 minutes
@@ -69,7 +73,6 @@ Details: [`schemas/README.md`](schemas/README.md) · progressive tutorial: [`eko
 | Path | What it contains |
 |---|---|
 | [`eko-learning-path.md`](eko-learning-path.md) | Progressive architecture tutorial |
-| [`eko-impact.md`](eko-impact.md) | **For architects:** How EKO transforms the 6-phase design process, industry metrics, and rollout implications |
 | [`schemas/`](schemas/) | Draft JSON Schemas (v0.1.0) |
 | [`examples/`](examples/) | Progressive examples, including Seaway CBA |
 | [`media/`](media/) | Concept diagram and related artifacts |
