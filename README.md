@@ -36,7 +36,7 @@ This submission specifies the governed artifact and its validation contract. It 
 
 ---
 
-## The schema at a glance
+## The idea at a glance
 
 [![The evolution of enterprise knowledge from documents to executable behavior](media/Evolution_of_Enterprise_Knowledge.png)](media/Evolution_of_Enterprise_Knowledge.png)
 
@@ -72,5 +72,3 @@ Details: [`schemas/README.md`](schemas/README.md) · progressive tutorial: [`eko
 | [`schemas/`](schemas/) | Draft JSON Schemas (v0.1.0) |
 | [`examples/`](examples/) | Progressive examples, including Seaway CBA |
 | [`media/`](media/) | Concept diagram and related artifacts |
-
-Working drafts live under [`wip/`](wip/); treat them as quarry, not as the public surface.
